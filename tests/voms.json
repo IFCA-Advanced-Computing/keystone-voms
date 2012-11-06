@@ -1,0 +1,9 @@
+{
+    "dteam": {
+        "tenant": "dteam",
+        "roles": {
+            "": ["sysadmin"],
+            "NULL": ["netadmin"]
+        }
+    }
+}
