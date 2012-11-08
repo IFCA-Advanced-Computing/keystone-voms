@@ -1,9 +1,5 @@
 {
     "dteam": {
-        "tenant": "dteam",
-        "roles": {
-            "": ["sysadmin"],
-            "NULL": ["netadmin"]
-        }
+        "tenant": "BAR"
     }
 }

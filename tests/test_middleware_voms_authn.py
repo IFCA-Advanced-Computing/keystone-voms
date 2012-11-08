@@ -19,6 +19,7 @@ import uuid
 from keystone import config
 from keystone import exception
 from keystone.common import logging
+from keystone.identity.backends import kvs as kvs_identity
 from keystone import middleware
 from keystone.middleware import voms_authn
 from keystone.middleware.voms_authn import voms_helper
@@ -121,30 +122,11 @@ c8Dc+w==
 -----END CERTIFICATE-----"""
 
 
-class FakeIdentityManager(object):
-    def __init__(self, tenant_found=True, user_found=True):
-        self.tenant_found = tenant_found
-        self.user_found = user_found
-
-    def get_tenant_by_name(self, dummy, tenant):
-        if self.tenant_found:
-            return {"name": tenant, "id": tenant}
-        else:
-            raise exception.TenantNotFound(tenant_id=tenant)
-
-    def get_user(self, dummy, user_id):
-        if self.user_found:
-            return {"name": user_id, "id": user_id}
-        else:
-            raise exception.UserNotFound(user_id=user_id)
-
-    def create_user(self, dummy, user_id, user):
-        self.user_found = True
-
-
 class MiddlewareVomsAuthn(test.TestCase):
     def setUp(self):
         super(MiddlewareVomsAuthn, self).setUp()
+        self.identity_api = kvs_identity.Identity()
+        self.load_fixtures(default_fixtures)
         self.config([test.etcdir('keystone.conf.sample'),
                      test.testsdir('test_overrides.conf'),
                      test.testsdir('voms_authn.conf')])
@@ -155,20 +137,19 @@ class MiddlewareVomsAuthn(test.TestCase):
         req.environ[voms_authn.SSL_CLIENT_CERT_ENV] = valid_cert
         req.environ[voms_authn.SSL_CLIENT_CERT_CHAIN_0_ENV] = valid_cert_chain
         aux = voms_authn.VomsAuthNMiddleware(None)
-        aux.identity_api = FakeIdentityManager()
         aux._no_verify = True
         aux.process_request(req)
-        context = req.environ[middleware.CONTEXT_ENV]
-        self.assertEqual(context['REMOTE_USER'], user_dn)
+        user_out = req.environ['REMOTE_USER']
+        self.assertEqual(user_out, user_dn)
 
     def test_middleware_proxy_tenant_as_param(self):
+        """Verify that passing a tenant raises exception"""
         req = make_request()
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": True,
                                                        "tenantName": "fake"}}
         req.environ[voms_authn.SSL_CLIENT_CERT_ENV] = valid_cert
         req.environ[voms_authn.SSL_CLIENT_CERT_CHAIN_0_ENV] = valid_cert_chain
         aux = voms_authn.VomsAuthNMiddleware(None)
-        aux.identity_api = FakeIdentityManager()
         aux._no_verify = True
         self.assertRaises(
             exception.ValidationError,
@@ -176,39 +157,54 @@ class MiddlewareVomsAuthn(test.TestCase):
             req)
 
     def test_middleware_proxy_tenant_not_found(self):
+        """Verify that mapping to a non existing tenant raises exception"""
+        CONF.voms.voms_policy = "voms_no_tenant.json"
         req = make_request()
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": True}}
         req.environ[voms_authn.SSL_CLIENT_CERT_ENV] = valid_cert
         req.environ[voms_authn.SSL_CLIENT_CERT_CHAIN_0_ENV] = valid_cert_chain
         aux = voms_authn.VomsAuthNMiddleware(None)
-        aux.identity_api = FakeIdentityManager(tenant_found=False)
         aux._no_verify = True
         self.assertRaises(
             exception.Unauthorized,
             aux.process_request,
             req)
 
-    def test_middleware_proxy_user_not_found_autocreate(self):
+    def test_middleware_proxy_tenant_not_found(self):
+        """Verify that no VO-tenant mapping raises exception"""
+        CONF.voms.voms_policy = "voms_no_vo.json"
+        req = make_request()
+        req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": True}}
+        req.environ[voms_authn.SSL_CLIENT_CERT_ENV] = valid_cert
+        req.environ[voms_authn.SSL_CLIENT_CERT_CHAIN_0_ENV] = valid_cert_chain
+        aux = voms_authn.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        self.assertRaises(
+            exception.Unauthorized,
+            aux.process_request,
+            req)
+
+    def test_middleware_proxy_user_not_found_not_autocreate(self):
+        """Verify that user is autocreated"""
         CONF.voms.autocreate_users = True
         req = make_request()
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": True}}
         req.environ[voms_authn.SSL_CLIENT_CERT_ENV] = valid_cert
         req.environ[voms_authn.SSL_CLIENT_CERT_CHAIN_0_ENV] = valid_cert_chain
         aux = voms_authn.VomsAuthNMiddleware(None)
-        aux.identity_api = FakeIdentityManager(user_found=False)
         aux._no_verify = True
         aux.process_request(req)
-        context = req.environ[middleware.CONTEXT_ENV]
-        self.assertEqual(context['REMOTE_USER'], user_dn)
+        user_out = req.environ['REMOTE_USER']
+        self.assertEqual(user_out, user_dn)
 
     def test_middleware_proxy_user_not_found(self):
+        """Verify that user is not autocreated"""
         CONF.voms.autocreate_users = False
         req = make_request()
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": True}}
         req.environ[voms_authn.SSL_CLIENT_CERT_ENV] = valid_cert
         req.environ[voms_authn.SSL_CLIENT_CERT_CHAIN_0_ENV] = valid_cert_chain
         aux = voms_authn.VomsAuthNMiddleware(None)
-        aux.identity_api = FakeIdentityManager(user_found=False)
         aux._no_verify = True
         self.assertRaises(
             exception.Unauthorized,
@@ -216,6 +212,7 @@ class MiddlewareVomsAuthn(test.TestCase):
             req)
 
     def test_middleware_proxy_unknown(self):
+        """Verify that an unknown proxy raises exception"""
         req = make_request()
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": True}}
         req.environ[voms_authn.SSL_CLIENT_CERT_ENV] = valid_cert_no_tenant
@@ -226,6 +223,7 @@ class MiddlewareVomsAuthn(test.TestCase):
             req)
 
     def test_middleware_no_proxy(self):
+        """Verify that no proxy raises exception"""
         req = make_request()
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": True}}
         self.assertRaises(
@@ -234,12 +232,22 @@ class MiddlewareVomsAuthn(test.TestCase):
             req)
 
     def test_middleware_no_params(self):
+        """Verify that empty request returns none"""
         req = make_request()
         ret = voms_authn.VomsAuthNMiddleware(None).process_request(req)
         self.assertEqual(ret, None)
 
     def test_middleware_remote_user_set(self):
+        """Verify that if REMOTE_USER already set we skip the auth"""
         req = make_request()
         req.environ["REMOTE_USER"] = "Fake"
         ret = voms_authn.VomsAuthNMiddleware(None).process_request(req)
         self.assertEqual(ret, None)
+
+    def test_no_json_data(self):
+        """Verify that no JSON data raises exception"""
+        CONF.voms.voms_policy = None
+        self.assertRaises(
+            exception.UnexpectedError,
+            voms_authn.VomsAuthNMiddleware,
+            None)

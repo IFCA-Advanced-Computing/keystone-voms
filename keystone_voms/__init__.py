@@ -109,9 +109,13 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         try:
             self.voms_json = jsonutils.loads(
                 open(CONF.voms.voms_policy).read())
-        except:
-            raise exception.UnexpectedError("Could not load VOMS json data "
+        except ValueError:
+            raise exception.UnexpectedError("Bad formatted VOMS json data "
                                             "from %s" % CONF.voms.voms_policy)
+        except:
+            raise exception.UnexpectedError("Could not load VOMS json file "
+                                            "%s" % CONF.voms.voms_policy)
+
         self.VOMSDIR = CONF.voms.vomsdir_path
         self.CADIR = CONF.voms.ca_path
         self._no_verify = False
