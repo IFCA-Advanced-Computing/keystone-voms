@@ -231,6 +231,15 @@ class MiddlewareVomsAuthn(test.TestCase):
             voms_authn.VomsAuthNMiddleware(None).process_request,
             req)
 
+    def test_middleware_incorrect_json(self):
+        """Verify that bad JSON raises exception"""
+        req = make_request()
+        req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": "True"}}
+        self.assertRaises(
+            exception.ValidationError,
+            voms_authn.VomsAuthNMiddleware(None).process_request,
+            req)
+
     def test_middleware_no_params(self):
         """Verify that empty request returns none"""
         req = make_request()

@@ -243,7 +243,11 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         params = request.environ.get(PARAMS_ENV, {})
         auth = params.get("auth", {})
         if "voms" in auth:
-            return True
+            if auth["voms"] is True:
+                return True
+            else:
+                raise exception.ValidationError("Error in JSON, 'voms' "
+                    "must be set to true")
         return False
 
     def process_request(self, request):
