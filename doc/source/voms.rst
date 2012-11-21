@@ -8,7 +8,7 @@ VOMS Introduction
 The VOMS service can issue x509 proxies based on RFC 3820
 (https://www.ietf.org/rfc/rfc3820.txt) by using the ``-rfc`` option in
 the comandline. Instead of using plain x509 certificates this proxy can
-be used to authenticate against a propely configured Keystone server.
+be used to authenticate against a properly configured Keystone server.
 
 VOMS Authentication Module
 ==========================
@@ -275,9 +275,9 @@ follows::
 voms.json
 ~~~~~~~~~
 
-The VO and VO group mapping to the local tenants is made in the JSON file
-``/etc/keystone/keystone.json``. It is based on the VO name and VOMS proxy
-fqan::
+The VO and VO group mapping to the local tenants is made in the JSON
+file ``/etc/keystone/voms.json``. It is based on the VO name and VOMS
+proxy fqan::
 
   {
       "voname": {
