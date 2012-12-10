@@ -20,11 +20,13 @@ for OpenSSL to verify proxy certificates the environment variable
 ``/etc/apache2/envvars`` in Ubuntu).
 
 This module asumes that Keystone has support for external authentication
-as per the `Pluggable Identity Authentication Handlers Blueprint`_. 
+as implemented in the `Pluggable Identity Authentication Handlers Blueprint`_. 
+If you are using the an Ubuntu package ``python-keystone-voms`` this should
+fetch the correct dependencies.
 
 .. _Pluggable Identity Authentication Handlers Blueprint: https://blueprints.launchpad.net/keystone/+spec/pluggable-identity-authentication-handlers
 
-SSL info is fetched from the request environment. The authentication module
+SSL info is obtained from the request environment. The authentication module
 uses the voms library to check if the VOMS proxy is valid and if it is allowed
 in this server. The mapping between a VO, VO group and a keystone tenant is
 made in a configurable JSON file.
@@ -39,7 +41,7 @@ enabling it. Once a user has been granted access, you can manage it as you will
 do with any other user in keystone (i.e. disable/enable, grant/revoke roles,
 etc.).
 
-In order to authenticate, you must post a JSON request in the body containing
+In order to get a token, you must post a JSON request in the body containing
 the following::
 
     {
@@ -48,8 +50,26 @@ the following::
         }
     }
 
-Note that no ``tenantName`` should be requested at all, since this will be
-extracted from the VOMS AC.
+It is important to note here a difference between a VOMS backed keystone
+installation and a vanilla Keystone.
+
+In a normal keystone installation there are two types of possible request:
+unscoped and scoped. The unscoped requests works without specifying a
+``tenantName`` in the ``auth`` dictionary when making the request, whereas
+a scoped request needs of such field. The request above is an uscoped request,
+and the following is a scoped request::
+    
+    {
+        "auth": {
+            "voms": "true",
+            "tenantNane": "dteam",
+        }
+    }
+
+The particularity of the VOMS backend is that the user might not know to
+which tenant he is mapped to (because the mapping is made internally), thus
+the tenant name must be set to the VO name or the VOMS FQAN that he wants to
+use to authenticate.
 
 Installation
 ============
@@ -295,6 +315,26 @@ For example for the dteam VO, it could be configured as::
           "tenant": "dteam_ibergrid"
       }
   }
+
+If there are no matching FQANS but there is a VO name definition, the user will
+authenticate, therefore, a user making the following request::
+
+    {
+        "auth": {
+            "voms": "true",
+            "tenantNane": "/dteam/NGI_IBERGRID",
+        }
+    }
+        
+against the following configuration::
+
+    {
+        "dteam": {
+            "tenant": "dteam"
+        }
+    }
+
+will be sucessfully authenticated, because no FQAN matched, but the VO did.
 
 Catalog
 ~~~~~~~

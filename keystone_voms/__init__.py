@@ -19,6 +19,7 @@ import commands
 import ctypes
 import os
 import tempfile
+import uuid
 
 import M2Crypto
 
@@ -182,61 +183,17 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         vogroup = "/".join(l)
         return (vogroup, role, capability)
 
-    def _get_tenant_for_vo(self, vo, fqans):
-        # only check the firs fqan.
-        fqan = fqans.pop(0)
-        vo_group, vo_role, vo_capability = self._split_fqan(fqan)
+    def _get_tenant_mapping(self, vo, fqan):
+        voinfo = self.voms_json.get(fqan, {})
 
-        voinfo = self.voms_json.get(vo_group, {})
+        # If no FQAN matched, try with the VO name
         if not voinfo:
             voinfo = self.voms_json.get(vo, {})
 
-        # default to vo name
-        tenant_name = voinfo.get("tenant", vo)
-
+        tenant_name = voinfo.get("tenant", None)
+        if tenant_name is None:
+            raise exception.Unauthorized("Your VO is not authorized")
         return tenant_name
-
-    def _get_user_tenant(self, ssl_data):
-        try:
-            voms_info = self._get_voms_info(ssl_data)
-        except VomsError as e:
-            raise e
-
-        user_dn = voms_info["user"]
-        user_vo = voms_info["voname"]
-        user_fqans = voms_info["fqans"]
-
-        tenant_name = self._get_tenant_for_vo(user_vo, user_fqans)
-        try:
-            tenant_ref = self.identity_api.get_tenant_by_name(
-                self.identity_api,
-                tenant_name)
-        except exception.TenantNotFound:
-            raise
-
-        try:
-            user_ref = self.identity_api.get_user(self.identity_api, user_dn)
-        except exception.UserNotFound:
-            if CONF.voms.autocreate_users:
-                user = {
-                    "id": user_dn,
-                    "name": user_dn,
-                    "enabled": True,
-                    "tenantId": tenant_ref["id"]
-                }
-                # user_dn is supossed to be unique
-                self.identity_api.create_user(
-                    self.identity_api,
-                    user_dn,
-                    user)
-                self.identity_api.add_user_to_tenant(
-                    self.identity_api,
-                    tenant_ref["id"],
-                    user_dn)
-            else:
-                raise
-
-        return user_dn, tenant_ref["name"]
 
     def is_applicable(self, request):
         """Check if the request is applicable for this handler or not"""
@@ -247,8 +204,71 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                 return True
             else:
                 raise exception.ValidationError("Error in JSON, 'voms' "
-                    "must be set to true")
+                                                "must be set to true")
         return False
+
+    def _get_tenant(self, tenant_from_req, voms_info):
+        user_dn = voms_info["user"]
+        user_vo = voms_info["voname"]
+        user_fqans = voms_info["fqans"]
+        user_vo_groups = []
+        for fqan in user_fqans:
+            vo_group, vo_role, vo_capability = self._split_fqan(fqan)
+            user_vo_groups.append(vo_group)
+
+        if tenant_from_req not in [user_vo] + user_vo_groups:
+            raise exception.ValidationError(
+                "Requested 'tenantName' is not applicable: "
+                "%s" % tenant_from_req)
+        tenant_from_voms = self._get_tenant_mapping(user_vo, tenant_from_req)
+        try:
+            tenant_ref = self.identity_api.get_tenant_by_name(
+                self.identity_api, tenant_from_voms)
+        except exception.TenantNotFound:
+            raise
+
+        # NOTE(aloga): This is a bit tricky. If the user has been autocreated
+        # it might not be associated with the tenant (i.e. it was created
+        # during an unscoped request, therefore if the user is allowed and we
+        # have autocreate users, we have to check and add it to the tenant
+        if CONF.voms.autocreate_users:
+            user_ref = self.identity_api.get_user_by_name(
+                self.identity_api, user_dn)
+            tenants = self.identity_api.get_tenants_for_user(
+                self.identity_api, user_ref["id"])
+            if tenant_ref["id"] not in tenants:
+                LOG.info(_("Automatically adding user %s to tenant %s") %
+                        (user_dn, tenant_ref["name"]))
+                self.identity_api.add_user_to_tenant(
+                    self.identity_api,
+                    tenant_ref["id"],
+                    user_ref["id"])
+
+        return tenant_ref["name"]
+
+    def _get_user(self, voms_info):
+        user_dn = voms_info["user"]
+        try:
+            user_ref = self.identity_api.get_user_by_name(
+                self.identity_api, user_dn)
+        except exception.UserNotFound:
+            if CONF.voms.autocreate_users:
+                user_id = uuid.uuid4().hex
+                LOG.info(_("Autocreating REMOTE_USER %s with id %s") %
+                        (user_id, user_dn))
+                # TODO(aloga): add backend information un user referece?
+                user = {
+                    "id": user_id,
+                    "name": user_dn,
+                    "enabled": True,
+                }
+                self.identity_api.create_user(self.identity_api,
+                                              user_id,
+                                              user)
+            else:
+                LOG.debug(_("REMOTE_USER %s not found") % user_dn)
+                raise
+        return user_dn
 
     def process_request(self, request):
         if request.environ.get('REMOTE_USER', None) is not None:
@@ -264,20 +284,27 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                   SSL_CLIENT_CERT_CHAIN_0_ENV):
             ssl_dict[i] = request.environ.get(i, None)
 
+        params = request.environ.get(PARAMS_ENV)
+        tenant_from_req = params["auth"].get("tenantName", None)
+
         try:
-            user_dn, tenant = self._get_user_tenant(ssl_dict)
+            voms_info = self._get_voms_info(ssl_dict)
+        except VomsError as e:
+            raise e
+
+        try:
+            user_dn = self._get_user(voms_info)
         except exception.UserNotFound:
             raise exception.Unauthorized(message="User not found")
-        except exception.TenantNotFound:
-            raise exception.Unauthorized(message="Your VO is not accepted")
-        else:
-            params = request.environ.get(PARAMS_ENV)
-            if params["auth"].get("tenantName", None):
-                raise exception.ValidationError(
-                    "Found 'tenantName' in 'auth' when using "
-                    "VOMS authentication")
-            params["auth"]["tenantName"] = tenant
-            request.environ[PARAMS_ENV] = params
 
-            # indicate remote authentication via REMOTE_USER
-            request.environ['REMOTE_USER'] = user_dn
+        # Scoped request. We must translate from VOMS fqan to local tenant and
+        # mangle the dictionary
+        if tenant_from_req is not None:
+            try:
+                tenant_from_voms = self._get_tenant(tenant_from_req, voms_info)
+                params["auth"]["tenantName"] = tenant_from_voms
+                request.environ[PARAMS_ENV] = params
+            except exception.TenantNotFound:
+                raise exception.Unauthorized(message="Your VO is not accepted")
+
+        request.environ['REMOTE_USER'] = user_dn
