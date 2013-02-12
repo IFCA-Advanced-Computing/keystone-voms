@@ -183,7 +183,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         vogroup = "/".join(l)
         return (vogroup, role, capability)
 
-    def _get_tenant_mapping(self, vo, fqan):
+    def _get_project_mapping(self, vo, fqan):
         voinfo = self.voms_json.get(fqan, {})
 
         # If no FQAN matched, try with the VO name
@@ -207,7 +207,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                                                 "must be set to true")
         return False
 
-    def _get_tenant(self, tenant_from_req, voms_info):
+    def _get_project(self, tenant_from_req, voms_info):
         user_dn = voms_info["user"]
         user_vo = voms_info["voname"]
         user_fqans = voms_info["fqans"]
@@ -220,11 +220,11 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             raise exception.ValidationError(
                 "Requested 'tenantName' is not applicable: "
                 "%s" % tenant_from_req)
-        tenant_from_voms = self._get_tenant_mapping(user_vo, tenant_from_req)
+        tenant_from_voms = self._get_project_mapping(user_vo, tenant_from_req)
         try:
-            tenant_ref = self.identity_api.get_tenant_by_name(
+            tenant_ref = self.identity_api.get_project_by_name(
                 self.identity_api, tenant_from_voms)
-        except exception.TenantNotFound:
+        except exception.ProjectNotFound:
             raise
 
         # NOTE(aloga): This is a bit tricky. If the user has been autocreated
@@ -234,12 +234,12 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         if CONF.voms.autocreate_users:
             user_ref = self.identity_api.get_user_by_name(
                 self.identity_api, user_dn)
-            tenants = self.identity_api.get_tenants_for_user(
+            tenants = self.identity_api.get_projects_for_user(
                 self.identity_api, user_ref["id"])
             if tenant_ref["id"] not in tenants:
                 LOG.info(_("Automatically adding user %s to tenant %s") %
                         (user_dn, tenant_ref["name"]))
-                self.identity_api.add_user_to_tenant(
+                self.identity_api.add_user_to_project(
                     self.identity_api,
                     tenant_ref["id"],
                     user_ref["id"])
@@ -301,10 +301,10 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         # mangle the dictionary
         if tenant_from_req is not None:
             try:
-                tenant_from_voms = self._get_tenant(tenant_from_req, voms_info)
+                tenant_from_voms = self._get_project(tenant_from_req, voms_info)
                 params["auth"]["tenantName"] = tenant_from_voms
                 request.environ[PARAMS_ENV] = params
-            except exception.TenantNotFound:
+            except exception.ProjectNotFound:
                 raise exception.Unauthorized(message="Your VO is not accepted")
 
         request.environ['REMOTE_USER'] = user_dn
