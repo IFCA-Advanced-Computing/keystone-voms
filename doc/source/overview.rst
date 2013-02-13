@@ -2,7 +2,8 @@ Keystone VOMS Overview
 ======================
 
 This VOMS authentication module assumes that Keystone is working behind
-an httpd server as a WSGI service with OpenSSL enabled.
+an httpd server as a WSGI service with OpenSSL enabled. It only works with the
+V2 API of Keystone, since the V3 is still a work in progress.
 
 This module asumes that Keystone has support for external authentication
 as implemented in the `Pluggable Identity Authentication Handlers Blueprint`_. 

@@ -121,6 +121,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         self.CADIR = CONF.voms.ca_path
         self._no_verify = False
 
+        self.domain = CONF.identity.default_domain_id or "default"
+
         super(VomsAuthNMiddleware, self).__init__(*args, **kwargs)
 
     @staticmethod
@@ -223,7 +225,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         tenant_from_voms = self._get_project_mapping(user_vo, tenant_from_req)
         try:
             tenant_ref = self.identity_api.get_project_by_name(
-                self.identity_api, tenant_from_voms)
+                self.identity_api, tenant_from_voms, self.domain)
         except exception.ProjectNotFound:
             raise
 
@@ -233,7 +235,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         # have autocreate users, we have to check and add it to the tenant
         if CONF.voms.autocreate_users:
             user_ref = self.identity_api.get_user_by_name(
-                self.identity_api, user_dn)
+                self.identity_api, user_dn, self.domain)
             tenants = self.identity_api.get_projects_for_user(
                 self.identity_api, user_ref["id"])
             if tenant_ref["id"] not in tenants:
@@ -250,7 +252,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         user_dn = voms_info["user"]
         try:
             user_ref = self.identity_api.get_user_by_name(
-                self.identity_api, user_dn)
+                self.identity_api, user_dn, self.domain)
         except exception.UserNotFound:
             if CONF.voms.autocreate_users:
                 user_id = uuid.uuid4().hex
@@ -261,6 +263,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                     "id": user_id,
                     "name": user_dn,
                     "enabled": True,
+                    "domain_id": self.domain,
                 }
                 self.identity_api.create_user(self.identity_api,
                                               user_id,
