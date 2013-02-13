@@ -290,12 +290,12 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         try:
             voms_info = self._get_voms_info(ssl_dict)
         except VomsError as e:
-            raise e
+            return wsgi.render_exception(e)
 
         try:
             user_dn = self._get_user(voms_info)
-        except exception.UserNotFound:
-            raise exception.Unauthorized(message="User not found")
+        except exception.UserNotFound as e:
+            return wsgi.render_exception(e)
 
         # Scoped request. We must translate from VOMS fqan to local tenant and
         # mangle the dictionary
@@ -305,6 +305,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                 params["auth"]["tenantName"] = tenant_from_voms
                 request.environ[PARAMS_ENV] = params
             except exception.ProjectNotFound:
-                raise exception.Unauthorized(message="Your VO is not accepted")
+                e = exception.Unauthorized(message="VO is not accepted")
+                return wsgi.render_exception(e)
 
         request.environ['REMOTE_USER'] = user_dn
