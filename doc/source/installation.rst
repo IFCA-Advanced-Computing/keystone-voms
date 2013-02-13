@@ -3,7 +3,7 @@ Installation
 ============
 
 This module assumes that keystone is at least running the Grizzly version, since
-it needs some latestm additions that are not available in any prior release. You
+it needs some latest additions that are not available in any prior release. You
 can fetch the ubuntu packages and install it from the `Grizzly Trunk testing PPA
 <https://launchpad.net/~openstack-ubuntu-testing/+archive/grizzly-trunk-testing>`_.
 
@@ -14,7 +14,7 @@ With a running Grizzly installation, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
     git clone git://github.com/alvarolopez/keystone-voms.git
-    cd keystoe-voms
+    cd keystone-voms
     python setup.py install
 
 Enable the Keystone VOMS module

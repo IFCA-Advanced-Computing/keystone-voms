@@ -4,11 +4,10 @@ Configuration
 Allowed VOs
 -----------
 
-For each allowed VO, for each VOMS server it is needed a ``.lsc`` files under
-``/etc/grid-security/vomsdir/``. For each VO you need a subdirectory in that directory,
-containing as much LSC files as VOMS servers are trusted for that VO. A LSC file must be
-named as the fully qualified host name of the VOMS server with an ``.lsc``
-extension, and it must contain:
+For each allowed VO, you need a subdirectory in ``/etc/grid-security/vomsdir/``
+that contains the ``.lsc`` files of all truted VOMS servers for the given VO.
+The LSC files must be named as the fully qualified host name of the
+VOMS server with an ``.lsc`` extension, and they contain:
 
 * First line: subject DN of the VOMS server host certificate.
 * Second line: subject DN of the CA that issued the VOMS server host certificate.

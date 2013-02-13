@@ -1,5 +1,5 @@
-Keyston VOMS Overview
-=====================
+Keystone VOMS Overview
+======================
 
 This VOMS authentication module assumes that Keystone is working behind
 an httpd server as a WSGI service with OpenSSL enabled.
