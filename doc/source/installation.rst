@@ -10,12 +10,24 @@ can fetch the ubuntu packages and install it from the `Grizzly Trunk testing PPA
 Install the Keystone VOMS module
 --------------------------------
 
+Install from PPA
+~~~~~~~~~~~~~~~~
+
+You can install the latest version from a private PPA::
+
+    sudo add-apt-repository ppa:aloga/keystone-voms
+    sudo aptitude update
+    sudo aptitude install python-keystone-voms
+
+Install from source
+~~~~~~~~~~~~~~~~~~~
+
 With a running Grizzly installation, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
     git clone git://github.com/alvarolopez/keystone-voms.git
     cd keystone-voms
-    python setup.py install
+    sudo python setup.py install
 
 Enable the Keystone VOMS module
 -------------------------------

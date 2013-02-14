@@ -6,5 +6,5 @@ a valid VOMS proxy::
 
   $ voms-proxy-init -voms <VOMS> -rfc
   $ curl --insecure --cert $X509_USER_PROXY  -d \
-   '{"auth":{"voms": "true"}}' -H "Content-type: \
+   '{"auth":{"voms": true}}' -H "Content-type: \
     application/json" https://<keystone_host>/v2.0/tokens

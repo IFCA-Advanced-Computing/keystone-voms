@@ -117,6 +117,14 @@ Also, do not forget to set the variable ``OPENSSL_ALLOW_PROXY_CERTS`` to
 ``1`` in your Apache environment (``/etc/apache2/envvars`` in Debian/Ubuntu) so
 that X.509 proxy certificates are accepted by OpenSSL.
 
+With the above configuration, and assuming that the Keystone host is
+``keystone.example.org`` the endpoints will be as follow:
+
+* ``https://keystone.example.org:5000/`` will be public and private endpoints,
+  thus the Keystone URL will be ``https://keystone.example.org:5000/v2.0``
+* ``https://keystone.example.org:35357/`` will be administration endpoint,
+  thus the Keystone URL will be ``https://keystone.example.org:35357/v2.0``
+
 SQL Token driver
 ~~~~~~~~~~~~~~~~
 
@@ -133,13 +141,35 @@ Catalog
 ~~~~~~~
 
 Your have to adjust your keystone catalog so that the identity backend points
-to to the correct url. Assuming that you are using template catalog, edit the
-``/etc/keystone/default_catalog.templates``::
+to to the correct URLS as explained above. With the above configuration, these
+URLs will be:
 
-  catalog.RegionOne.identity.publicURL = https://<your_ks_host>/v2.0
-  catalog.RegionOne.identity.adminURL = https://<your_ks_host>/v2.0
-  catalog.RegionOne.identity.internalURL = https://<your_ks_host>/v2.0
-  catalog.RegionOne.identity.name = Identity Service
+* public URL: ``https://keystone.example.org:5000/v2.0``
+* admin URL: ``https://keystone.example.org:35357/v2.0``
+* internal URL: ``https://keystone.example.org:5000/v2.0``
 
 If you are using the SQL backend for storing your catalog, you should adjust it
 manually to reflect the new endpoints.
+
+PKI Tokens
+~~~~~~~~~~
+
+In order for the PKI tokens to work, you have to ensure that the keystone
+WSGI processes, that will run as the user ``keystone`` in the example above,
+have access to the configuration files. If you get this error::
+
+    [error] ERROR:root:Command 'openssl' returned non-zero exit status 3
+    [error] Traceback (most recent call last):
+    [error]   File "/usr/lib/python2.7/dist-packages/keystone/common/wsgi.py", line 229, in __call__
+    [error]     result = method(context, **params)
+    [error]   File "/usr/lib/python2.7/dist-packages/keystone/token/controllers.py", line 151, in authenticate
+    [error]     CONF.signing.keyfile)
+    [error]   File "/usr/lib/python2.7/dist-packages/keystone/common/cms.py", line 140, in cms_sign_token
+    [error]     output = cms_sign_text(text, signing_cert_file_name, signing_key_file_name)
+    [error]   File "/usr/lib/python2.7/dist-packages/keystone/common/cms.py", line 135, in cms_sign_text
+    [error]     raise subprocess.CalledProcessError(retcode, "openssl")
+    [error] CalledProcessError: Command 'openssl' returned non-zero exit status 3
+
+This may be that your keystone process cannot access the following file: 
+``/etc/keystone/ssl/private/signing_key.pem`` so please ensure that the keystone
+user can access that file.
