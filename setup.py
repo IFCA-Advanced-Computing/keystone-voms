@@ -29,17 +29,17 @@ setup(
     name='keystone_voms',
     version='1.0',
     description='Keystone VOMS module for Keystone (grizzly).',
-    long_description='''bla bla bla
-''',
+    long_description=("This package contains the VOMS external"
+                      " authentication module"),
     classifiers=[
         'Programming Language :: Python'
         'Development Status :: 5 - Production/Stable',
-        'Topic :: Internet :: WWW/HTTP :: WSGI :: Application'
+        'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware'
         ],
     keywords='',
     author='Spanish National Research Council',
     author_email='aloga@ifca.unican.es',
-    url='http://www.ifca.es',
+    url='https://github.com/IFCA/keystone-voms',
     license='Apache License, Version 2.0',
     include_package_data=True,
     packages=['keystone_voms'],

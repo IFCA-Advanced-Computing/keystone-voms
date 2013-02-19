@@ -100,8 +100,11 @@ or create a new configuration file for your keystone installation
     </VirtualHost>
 
 
-To run keystone as a WSGI app, copy ``httpd/keystone.py`` to
-``/usr/lib/cgi-bin/keystone/keystone.py`` and create the following links::
+To run keystone as a WSGI app you should create a WSGI script as the one
+included in the  `Github Keystone repository
+<https://github.com/openstack/keystone/blob/master/httpd/keystone.py>`_. Copy
+this script to ``/usr/lib/cgi-bin/keystone/keystone.py`` and create the
+following links::
 
     sudo mkdir -p /usr/lib/cgi-bin/keystone
     sudo cp httpd/keystone.py /usr/lib/cgi-bin/keystone/keystone.py
@@ -124,6 +127,13 @@ With the above configuration, and assuming that the Keystone host is
   thus the Keystone URL will be ``https://keystone.example.org:5000/v2.0``
 * ``https://keystone.example.org:35357/`` will be administration endpoint,
   thus the Keystone URL will be ``https://keystone.example.org:35357/v2.0``
+
+DB Backend
+~~~~~~~~~~
+
+You should take into account that the default SQL backend used by keystone is
+SQLite, which does not support multithreading. You should switch to any other
+backend, such as MySQL.
 
 SQL Token driver
 ~~~~~~~~~~~~~~~~

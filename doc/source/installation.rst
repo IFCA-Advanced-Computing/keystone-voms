@@ -25,7 +25,7 @@ Install from source
 With a running Grizzly installation, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
-    git clone git://github.com/alvarolopez/keystone-voms.git
+    git clone git://github.com/IFCA/keystone-voms.git
     cd keystone-voms
     sudo python setup.py install
 
