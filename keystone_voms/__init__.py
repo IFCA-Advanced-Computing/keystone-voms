@@ -50,7 +50,7 @@ CONTEXT_ENV = keystone.middleware.CONTEXT_ENV
 
 SSL_CLIENT_S_DN_ENV = "SSL_CLIENT_S_DN"
 SSL_CLIENT_CERT_ENV = "SSL_CLIENT_CERT"
-SSL_CLIENT_CERT_CHAIN_0_ENV = "SSL_CLIENT_CERT_CHAIN_0"
+SSL_CLIENT_CERT_CHAIN_ENV_PREFIX = "SSL_CLIENT_CERT_CHAIN_"
 
 
 class VomsError(exception.Error):
@@ -129,12 +129,11 @@ class VomsAuthNMiddleware(wsgi.Middleware):
     def _get_cert_chain(ssl_info):
         """Return certificate and chain from the ssl info in M2Crypto format"""
 
-        cert = ssl_info.get(SSL_CLIENT_CERT_ENV, "")
-        chain = ssl_info.get(SSL_CLIENT_CERT_CHAIN_0_ENV, "")
-        cert = M2Crypto.X509.load_cert_string(cert)
-        aux = M2Crypto.X509.load_cert_string(chain)
+        cert = M2Crypto.X509.load_cert_string(ssl_info.get("cert", ""))
         chain = M2Crypto.X509.X509_Stack()
-        chain.push(aux)
+        for c in ssl_info.get("chain", []):
+            aux = M2Crypto.X509.load_cert_string(c)
+            chain.push(aux)
         return cert, chain
 
     def _get_voms_info(self, ssl_info):
@@ -281,11 +280,15 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         if not self.is_applicable(request):
             return self.application
 
-        ssl_dict = {}
-        for i in (SSL_CLIENT_S_DN_ENV,
-                  SSL_CLIENT_CERT_ENV,
-                  SSL_CLIENT_CERT_CHAIN_0_ENV):
-            ssl_dict[i] = request.environ.get(i, None)
+        ssl_dict = {
+            "dn": request.environ.get(SSL_CLIENT_S_DN_ENV, None),
+            "cert": request.environ.get(SSL_CLIENT_CERT_ENV, None),
+            "chain": [],
+        }
+
+        for k, v in request.environ.iteritems():
+            if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX):
+                ssl_dict["chain"].append(v)
 
         params = request.environ.get(PARAMS_ENV)
         tenant_from_req = params["auth"].get("tenantName", None)
