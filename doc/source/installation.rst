@@ -10,6 +10,13 @@ can fetch the ubuntu packages and install it from the `Grizzly Trunk testing PPA
 Install the Keystone VOMS module
 --------------------------------
 
+Install from the Python Package Index
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can install it directly from PyPI::
+
+    pip install keystone_voms
+
 Install from PPA
 ~~~~~~~~~~~~~~~~
 

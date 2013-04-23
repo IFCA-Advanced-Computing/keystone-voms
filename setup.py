@@ -27,14 +27,14 @@ from setuptools import setup
 
 setup(
     name='keystone_voms',
-    version='1.0',
+    version='1.1',
     description='Keystone VOMS module for Keystone (grizzly).',
     long_description=("This package contains the VOMS external"
                       " authentication module"),
     classifiers=[
-        'Programming Language :: Python'
+        'Programming Language :: Python',
         'Development Status :: 5 - Production/Stable',
-        'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware'
+        'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
         ],
     keywords='',
     author='Spanish National Research Council',
