@@ -28,8 +28,8 @@ from keystone.common import wsgi
 from keystone import exception
 from keystone import identity
 import keystone.middleware
-from keystone.openstack.common import cfg
 from keystone.openstack.common import jsonutils
+from oslo.config import cfg
 
 from keystone_voms import voms_helper
 

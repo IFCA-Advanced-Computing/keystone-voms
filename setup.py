@@ -27,7 +27,7 @@ from setuptools import setup
 
 setup(
     name='keystone_voms',
-    version='1.1',
+    version='2012.3-1',
     description='Keystone VOMS module for Keystone (grizzly).',
     long_description=("This package contains the VOMS external"
                       " authentication module"),
