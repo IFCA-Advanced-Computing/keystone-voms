@@ -14,11 +14,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import collections
-import commands
-import ctypes
-import os
-import tempfile
 import uuid
 
 import M2Crypto
@@ -184,18 +179,6 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         vogroup = "/".join(l)
         return (vogroup, role, capability)
 
-    def _get_project_mapping(self, vo, fqan):
-        voinfo = self.voms_json.get(fqan, {})
-
-        # If no FQAN matched, try with the VO name
-        if not voinfo:
-            voinfo = self.voms_json.get(vo, {})
-
-        tenant_name = voinfo.get("tenant", None)
-        if tenant_name is None:
-            raise exception.Unauthorized("Your VO is not authorized")
-        return tenant_name
-
     def is_applicable(self, request):
         """Check if the request is applicable for this handler or not"""
         params = request.environ.get(PARAMS_ENV, {})
@@ -208,65 +191,60 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                                                 "must be set to true")
         return False
 
-    def _get_project(self, tenant_from_req, voms_info):
-        user_dn = voms_info["user"]
+    def _get_project_from_voms(self, voms_info):
         user_vo = voms_info["voname"]
         user_fqans = voms_info["fqans"]
-        user_vo_groups = []
         for fqan in user_fqans:
-            vo_group, vo_role, vo_capability = self._split_fqan(fqan)
-            user_vo_groups.append(vo_group)
+            voinfo = self.voms_json.get(fqan, {})
+            if voinfo is not {}:
+                break
+        # If no FQAN matched, try with the VO name
+        if not voinfo:
+            voinfo = self.voms_json.get(user_vo, {})
 
-        if tenant_from_req not in [user_vo] + user_vo_groups:
-            raise exception.ValidationError(
-                "Requested 'tenantName' is not applicable: "
-                "%s" % tenant_from_req)
-        tenant_from_voms = self._get_project_mapping(user_vo, tenant_from_req)
+        tenant_name = voinfo.get("tenant", "")
+
         try:
             tenant_ref = self.identity_api.get_project_by_name(
-                self.identity_api, tenant_from_voms, self.domain)
+                self.identity_api, tenant_name, self.domain)
         except exception.ProjectNotFound:
-            raise
+            LOG.warning(_("VO mapping not properly configured for '%s'" %
+                          user_vo))
+            raise exception.Unauthorized("Your VO is not authorized")
 
-        # NOTE(aloga): This is a bit tricky. If the user has been autocreated
-        # it might not be associated with the tenant (i.e. it was created
-        # during an unscoped request, therefore if the user is allowed and we
-        # have autocreate users, we have to check and add it to the tenant
-        if CONF.voms.autocreate_users:
-            user_ref = self.identity_api.get_user_by_name(
-                self.identity_api, user_dn, self.domain)
-            tenants = self.identity_api.get_projects_for_user(
-                self.identity_api, user_ref["id"])
-            if tenant_ref["id"] not in tenants:
-                LOG.info(_("Automatically adding user %s to tenant %s") %
-                        (user_dn, tenant_ref["name"]))
-                self.identity_api.add_user_to_project(
-                    self.identity_api,
-                    tenant_ref["id"],
-                    user_ref["id"])
+        return tenant_ref["id"]
 
-        return tenant_ref["name"]
+    def _create_user_in_tenant(self, user_dn, tenant_id):
+        user_id = uuid.uuid4().hex
+        LOG.info(_("Autocreating REMOTE_USER %s with id %s") %
+                   (user_id, user_dn))
+        # TODO(aloga): add backend information in user referece?
+        user = {
+            "id": user_id,
+            "name": user_dn,
+            "enabled": True,
+            "domain_id": self.domain,
+        }
+        self.identity_api.create_user(self.identity_api,
+                                      user_id,
+                                      user)
+
+        LOG.info(_("Automatically adding user %s to tenant %s") %
+                   (user_dn, tenant_id))
+        self.identity_api.add_user_to_project(self.identity_api,
+                                              tenant_id,
+                                              user_id)
 
     def _get_user(self, voms_info):
         user_dn = voms_info["user"]
         try:
-            user_ref = self.identity_api.get_user_by_name(
-                self.identity_api, user_dn, self.domain)
+            self.identity_api.get_user_by_name(self.identity_api,
+                                               user_dn,
+                                               self.domain)
         except exception.UserNotFound:
             if CONF.voms.autocreate_users:
-                user_id = uuid.uuid4().hex
-                LOG.info(_("Autocreating REMOTE_USER %s with id %s") %
-                        (user_id, user_dn))
-                # TODO(aloga): add backend information un user referece?
-                user = {
-                    "id": user_id,
-                    "name": user_dn,
-                    "enabled": True,
-                    "domain_id": self.domain,
-                }
-                self.identity_api.create_user(self.identity_api,
-                                              user_id,
-                                              user)
+                tenant_id = self._get_project_from_voms(voms_info)
+                self._create_user_in_tenant(user_dn, tenant_id)
             else:
                 LOG.debug(_("REMOTE_USER %s not found") % user_dn)
                 raise
@@ -290,9 +268,6 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX):
                 ssl_dict["chain"].append(v)
 
-        params = request.environ.get(PARAMS_ENV)
-        tenant_from_req = params["auth"].get("tenantName", None)
-
         try:
             voms_info = self._get_voms_info(ssl_dict)
         except VomsError as e:
@@ -302,16 +277,5 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             user_dn = self._get_user(voms_info)
         except exception.UserNotFound as e:
             return wsgi.render_exception(e)
-
-        # Scoped request. We must translate from VOMS fqan to local tenant and
-        # mangle the dictionary
-        if tenant_from_req is not None:
-            try:
-                tenant_from_voms = self._get_project(tenant_from_req, voms_info)
-                params["auth"]["tenantName"] = tenant_from_voms
-                request.environ[PARAMS_ENV] = params
-            except exception.ProjectNotFound:
-                e = exception.Unauthorized(message="VO is not accepted")
-                return wsgi.render_exception(e)
 
         request.environ['REMOTE_USER'] = user_dn
