@@ -212,7 +212,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                           user_vo))
             raise exception.Unauthorized("Your VO is not authorized")
 
-        return tenant_ref["id"]
+        return tenant_ref
 
     def _create_user_in_tenant(self, user_dn, tenant_id):
         user_id = uuid.uuid4().hex
@@ -235,7 +235,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                                               tenant_id,
                                               user_id)
 
-    def _get_user(self, voms_info):
+    def _get_user(self, voms_info, req_tenant):
         user_dn = voms_info["user"]
         try:
             self.identity_api.get_user_by_name(self.identity_api,
@@ -243,14 +243,17 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                                                self.domain)
         except exception.UserNotFound:
             if CONF.voms.autocreate_users:
-                tenant_id = self._get_project_from_voms(voms_info)
-                self._create_user_in_tenant(user_dn, tenant_id)
+                tenant = self._get_project_from_voms(voms_info)
+                # If the user is requesting a wrong tenant, stop
+                if req_tenant and req_tenant != tenant["name"]:
+                    raise exception.Unauthorized
+                self._create_user_in_tenant(user_dn, tenant["id"])
             else:
                 LOG.debug(_("REMOTE_USER %s not found") % user_dn)
                 raise
         return user_dn
 
-    def process_request(self, request):
+    def _process_request(self, request):
         if request.environ.get('REMOTE_USER', None) is not None:
             # authenticated upstream
             return self.application
@@ -263,19 +266,22 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             "cert": request.environ.get(SSL_CLIENT_CERT_ENV, None),
             "chain": [],
         }
-
         for k, v in request.environ.iteritems():
             if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX):
                 ssl_dict["chain"].append(v)
 
-        try:
-            voms_info = self._get_voms_info(ssl_dict)
-        except VomsError as e:
-            return wsgi.render_exception(e)
+        voms_info = self._get_voms_info(ssl_dict)
 
-        try:
-            user_dn = self._get_user(voms_info)
-        except exception.UserNotFound as e:
-            return wsgi.render_exception(e)
+        params = request.environ.get(PARAMS_ENV)
+        tenant_from_req = params["auth"].get("tenantName", None)
+
+        user_dn = self._get_user(voms_info, tenant_from_req)
 
         request.environ['REMOTE_USER'] = user_dn
+
+    def process_request(self, request):
+        # NOTE(aloga): This should be removed for Havana
+        try:
+            return self._process_request(request)
+        except Exception as e:
+            return wsgi.render_exception(e)
