@@ -44,7 +44,7 @@ and passes the authenticated user down to keystone. Add the VOMS filter to your
 configuration file ``/etc/keystone/keystone.conf`` ::
 
     [filter:voms]
-    use = egg:keystone_voms#voms_filter
+    paste.filter_factory = keystone_voms:VomsAuthNMiddleware.factory
 
 Then add this filter to the ``public_api`` pipeline::
 
