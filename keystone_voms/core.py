@@ -32,11 +32,24 @@ LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 opts = [
-    cfg.StrOpt("voms_policy", default="/etc/keystone/voms.json"),
-    cfg.StrOpt("vomsdir_path", default="/etc/grid-security/vomsdir/"),
-    cfg.StrOpt("ca_path", default="/etc/grid-security/certificates/"),
-    cfg.StrOpt("vomsapi_lib", default="libvomsapi.so.1"),
-    cfg.BoolOpt("autocreate_users", default=False),
+    cfg.StrOpt("voms_policy",
+               default="/etc/keystone/voms.json",
+               help="JSON file containing the VOMS mapping"),
+    cfg.StrOpt("vomsdir_path",
+               default="/etc/grid-security/vomsdir/",
+               help="Path where VOMS LSC configurations are stored "
+               "(vomsdir path)."),
+    cfg.StrOpt("ca_path",
+               default="/etc/grid-security/certificates/",
+               help="Path where CA and CRLs are stored"),
+    cfg.StrOpt("vomsapi_lib",
+               default="libvomsapi.so.1",
+               help="VOMS library to use"),
+    cfg.BoolOpt("autocreate_users",
+                default=False,
+                help="If enabled, user not found on the local Identity "
+                "backend will be created and added to the tenant "
+                "automatically"),
 ]
 CONF.register_opts(opts, group="voms")
 
