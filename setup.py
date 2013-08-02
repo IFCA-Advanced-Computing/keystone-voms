@@ -27,7 +27,7 @@ from setuptools import setup
 
 setup(
     name='keystone_voms',
-    version='2012.3-1',
+    version='2013.1-1',
     description='Keystone VOMS module for Keystone (grizzly).',
     long_description=("This package contains the VOMS external"
                       " authentication module"),
@@ -40,6 +40,7 @@ setup(
     author='Spanish National Research Council',
     author_email='aloga@ifca.unican.es',
     url='https://github.com/IFCA/keystone-voms',
+    download_url = 'https://github.com/IFCA/keystone-voms/archive/stable/grizzly.tar.gz',
     license='Apache License, Version 2.0',
     include_package_data=True,
     packages=['keystone_voms'],
