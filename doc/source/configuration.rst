@@ -92,8 +92,7 @@ most installations. These are under the ``[voms]`` section::
 * ``ca_path``: Path where the CAs and CRLs are stored.
 * ``voms_policy``: JSON file containing the VO/tenant/role mapping.
 * ``vomsapi_lib``: Path to the voms library to use.
-* ``vomsapi_lib``: Whether a user should be autocreated if it does not exist.
-* ``autocreate_users``: Whether we must create the users for the trusted VOs on the fly.
+* ``autocreate_users``: Whether we should create the users for the trusted VOs on the fly.
 
 
 
