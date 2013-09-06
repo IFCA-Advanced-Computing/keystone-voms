@@ -269,7 +269,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             raise exception.Unauthorized
 
         if CONF.voms.autocreate_users:
-            tenants = self.identity_api.list_user_projects(
+            tenants = self.identity_api.get_projects_for_user(
                     self.identity_api,
                     user_ref["id"])
 
