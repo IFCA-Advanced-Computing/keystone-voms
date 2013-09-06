@@ -18,16 +18,15 @@ import uuid
 
 from keystone import config
 from keystone import exception
-
+from keystone.identity import controllers
 from keystone import middleware
-import keystone_voms
-#from keystone_voms import voms_helper
 from keystone import test
 
+import keystone_voms
+
 import default_fixtures
-#import test_backend
-from test_middleware import make_request
 import test_auth
+from test_middleware import make_request
 
 
 CONF = config.CONF
@@ -137,7 +136,8 @@ def prepare_request(body=None, cert=None, chain=None):
     if cert:
         req.environ[keystone_voms.SSL_CLIENT_CERT_ENV] = cert
     if chain:
-        req.environ[keystone_voms.SSL_CLIENT_CERT_CHAIN_ENV_PREFIX + "0"] = chain
+        req.environ[keystone_voms.SSL_CLIENT_CERT_CHAIN_ENV_PREFIX +
+                    "0"] = chain
     return req
 
 
@@ -363,9 +363,47 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ, params["auth"])
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
         self.assertEqual(user_dn, remote_token["access"]["user"]["username"])
         self.assertNotIn("tenant", remote_token["access"])
+
+    def test_unscoped_remote_authn_existing_user_in_tenant(self):
+        """Verify unscoped request for an existing user, already in a tenant"""
+
+        user_id = uuid.uuid4().hex
+        user = {
+            "id": user_id,
+            "name": user_dn,
+            "enabled": True,
+            "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
+        }
+        tenant_id = default_fixtures.TENANTS[-1]["id"]
+
+        # Create the user
+        self.identity_api.create_user(user_id, user)
+        # Add the user to tenant different than the mapped one
+        self.identity_api.add_user_to_project(tenant_id, user_id)
+        req = prepare_request(get_auth_body(),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+
+        tenant_controller = controllers.Tenant()
+        fake_context = {
+            "token_id": remote_token["access"]["token"]["id"],
+            "query_string": {"limit": None},
+        }
+        tenants = tenant_controller.get_projects_for_token(fake_context)
+        self.assertItemsEqual(
+            ("bar", tenant_id),  # User tenants
+            [i["id"].lower() for i in tenants["tenants"]]
+        )
 
     def test_scoped_remote_authn(self):
         """Verify unscoped request"""
@@ -376,7 +414,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ, params["auth"])
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
         self.assertEqual(user_dn,
                          remote_token["access"]["user"]["username"])
         self.assertEqual("BAR",
