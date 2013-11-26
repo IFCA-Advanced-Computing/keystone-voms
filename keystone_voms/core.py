@@ -227,7 +227,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
         return tenant_ref
 
-    def _create_user_in_tenant(self, user_dn, tenant_id):
+    def _create_user(self, user_dn):
         user_id = uuid.uuid4().hex
         LOG.info(_("Autocreating REMOTE_USER %s with id %s") %
                    (user_id, user_dn))
@@ -241,9 +241,11 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         self.identity_api.create_user(self.identity_api,
                                       user_id,
                                       user)
+        return user
 
+    def _add_user_to_tenant(self, user_id, tenant_id):
         LOG.info(_("Automatically adding user %s to tenant %s") %
-                   (user_dn, tenant_id))
+                   (user_id, tenant_id))
         self.identity_api.add_user_to_project(self.identity_api,
                                               tenant_id,
                                               user_id)
@@ -251,20 +253,30 @@ class VomsAuthNMiddleware(wsgi.Middleware):
     def _get_user(self, voms_info, req_tenant):
         user_dn = voms_info["user"]
         try:
-            self.identity_api.get_user_by_name(self.identity_api,
+            user_ref = self.identity_api.get_user_by_name(self.identity_api,
                                                user_dn,
                                                self.domain)
         except exception.UserNotFound:
             if CONF.voms.autocreate_users:
-                tenant = self._get_project_from_voms(voms_info)
-                # If the user is requesting a wrong tenant, stop
-                if req_tenant and req_tenant != tenant["name"]:
-                    raise exception.Unauthorized
-                self._create_user_in_tenant(user_dn, tenant["id"])
+                user_ref = self._create_user(user_dn)
             else:
                 LOG.debug(_("REMOTE_USER %s not found") % user_dn)
                 raise
-        return user_dn
+
+        tenant = self._get_project_from_voms(voms_info)
+        # If the user is requesting a wrong tenant, stop
+        if req_tenant and req_tenant != tenant["name"]:
+            raise exception.Unauthorized
+
+        if CONF.voms.autocreate_users:
+            tenants = self.identity_api.get_projects_for_user(
+                    self.identity_api,
+                    user_ref["id"])
+
+            if tenant not in tenants:
+                self._add_user_to_tenant(user_ref['id'], tenant['id'])
+
+        return user_dn, tenant['name']
 
     def _process_request(self, request):
         if request.environ.get('REMOTE_USER', None) is not None:
@@ -288,9 +300,10 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         params = request.environ.get(PARAMS_ENV)
         tenant_from_req = params["auth"].get("tenantName", None)
 
-        user_dn = self._get_user(voms_info, tenant_from_req)
+        user_dn, tenant = self._get_user(voms_info, tenant_from_req)
 
         request.environ['REMOTE_USER'] = user_dn
+#        params["auth"]["tenantName"] = tenant
 
     def process_request(self, request):
         # NOTE(aloga): This should be removed for Havana
