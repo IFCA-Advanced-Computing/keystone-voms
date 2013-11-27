@@ -1,5 +1,26 @@
-Configuration
-=============
+VOMS module Configuration
+=========================
+
+VOMS configuration options
+--------------------------
+
+There are several new options in ``/etc/keystone/keystone.conf`` that are used
+to configure the VOMS identity behaviour. The default values should be OK for
+most installations, except the ``autocreate_users`` option. These optiones are
+under the ``[voms]`` section::
+
+    [voms]
+    vomsdir_path = /etc/grid-security/vomsdir
+    ca_path = /etc/grid-security/certificates
+    voms_policy = /etc/keystone/voms.json
+    vomsapi_lib = libvomsapi.so.1
+    autocreate_users = False
+
+* ``vomsdir_path``: Path storing the ``.lsc`` files.
+* ``ca_path``: Path where the CAs and CRLs are stored.
+* ``voms_policy``: JSON file containing the VO/tenant/role mapping.
+* ``vomsapi_lib``: Path to the voms library to use.
+* ``autocreate_users``: Whether a user should be autocreated if it does not exist.
 
 Allowed VOs
 -----------
@@ -62,7 +83,7 @@ authenticate, therefore, a user making the following request::
             "tenantNane": "/dteam/NGI_IBERGRID",
         }
     }
-        
+
 against the following configuration::
 
     {
@@ -72,29 +93,3 @@ against the following configuration::
     }
 
 will be sucessfully authenticated, because no FQAN matched, but the VO did.
-
-
-VOMS configuration options
---------------------------
-
-There are several new options in ``/etc/keystone/keystone.conf`` that are used
-to configure the VOMS identity behaviour. The default values should be OK for
-most installations. These are under the ``[voms]`` section::
-
-    [voms]
-    vomsdir_path = /etc/grid-security/vomsdir
-    ca_path = /etc/grid-security/certificates
-    voms_policy = /etc/keystone/voms.json
-    vomsapi_lib = libvomsapi.so.1
-    autocreate_users = False
-
-* ``vomsdir_path``: Path storing the ``.lsc`` files.
-* ``ca_path``: Path where the CAs and CRLs are stored.
-* ``voms_policy``: JSON file containing the VO/tenant/role mapping.
-* ``vomsapi_lib``: Path to the voms library to use.
-* ``vomsapi_lib``: Whether a user should be autocreated if it does not exist.
-* ``autocreate_users``: Whether we must create the users for the trusted VOs on the fly.
-
-
-
-

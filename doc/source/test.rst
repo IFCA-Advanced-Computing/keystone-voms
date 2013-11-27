@@ -4,7 +4,7 @@ Test it!
 ========
 
 Once you have everything configured you can test it requesting a token using
-a valid VOMS proxy. 
+a valid VOMS proxy.
 
 First get a valid VOMS proxy::
 
@@ -34,14 +34,14 @@ allowed to access::
      http://localhost:35357/v2.0/tenants
 
 If this is sucessful, you should get something like::
-     
+
      {
         "tenants_links": [],
         "tenants": [
             {
-                "description": "Some Tenant", 
-                "enabled": true, 
-                "id": "999f045cb1ff4684a15ebb334af61461", 
+                "description": "Some Tenant",
+                "enabled": true,
+                "id": "999f045cb1ff4684a15ebb334af61461",
                 "name": "TenantName"
             }
         ]
@@ -58,24 +58,25 @@ Finally, you should obtain your token::
     {
         "access": {
                 (...)
-            }, 
+            },
             "serviceCatalog": [
                     (...)
-            ], 
+            ],
             "token": {
-                "expires": "2013-07-30T12:16:23Z", 
-                "id": "ccb739df861e76a5a9039d21ec040a91", 
-                "issued_at": "2013-07-29T12:16:23.625426", 
+                "expires": "2013-07-30T12:16:23Z",
+                "id": "ccb739df861e76a5a9039d21ec040a91",
+                "issued_at": "2013-07-29T12:16:23.625426",
                 "tenant": {
-                    "description": "Some Tenant", 
-                    "enabled": true, 
-                    "id": "999f045cb1ff4684a15ebb334af61461", 
+                    "description": "Some Tenant",
+                    "enabled": true,
+                    "id": "999f045cb1ff4684a15ebb334af61461",
                     "name": "TenantName"
                 }
-            }, 
+            },
             "user": {
                 (...)
             }
         }
     }
 
+If everything is OK, you should be able to start :doc:`using it <usage>`.

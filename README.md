@@ -1,28 +1,17 @@
 Keystone VOMS authentication module
 ===================================
 
-This module is intended to provide VOMS authentication to a Grizzzly OpenStack Keystone.
+This module is intended to provide VOMS authentication to a Grizzly
+OpenStack Keystone. It is designed to be integrated as an external
+authentication plugin, so that Keystone will preserve its original
+features and users will still be able to authenticate using any of the
+Keystone native mechanisms.
 
-The documentation can be found in the following URL: https://keystone-voms.readthedocs.org/en/latest/
+The documentation (the source is in ``doc/source/``) is online at
+[Keystone VOMS documentation](https://keystone-voms.readthedocs.org/en/latest/).
 
-Running the tests
-=================
+If you are using it, it would be nice that you add your site to the
+[Sites Using It](https://github.com/IFCA/keystone-voms/wiki/SitesUsingIt) wiki page.
 
-First, get the keystone code, and generate the virtualenv by running the tests::
-
-    git clone https://github.com/openstack/keystone/ -b stable/havana /tmp/keystone/
-    cd /tmp/keystone/
-    virtualenv --system-site-packages .venv/
-    ./run_tests.sh -u
-
-Then, activate the virtualenv and install the VOMS module into it::
-
-    source /tmp/keystone/.venv/bin/activate
-    cd /path/to/the/keystone/voms/module
-    python setup.py install
-
-Copy the tests and run them::
-
-    cp /path/to/the/keystone/voms/module/tests/* /tmp/keystone/tests
-    cd /tmp/keystone/
-    ./run_tests.sh test_middleware_voms_authn
+If you are interested in running the unit test, check the ``TESTING.md``
+file for instructions.
