@@ -27,8 +27,8 @@ from setuptools import setup
 
 setup(
     name='keystone_voms',
-    version='2013.1-1',
-    description='Keystone VOMS module for Keystone (grizzly).',
+    version='2013.2-0',
+    description='Keystone VOMS module for Keystone (havana).',
     long_description=("This package contains the VOMS external"
                       " authentication module"),
     classifiers=[
@@ -39,14 +39,15 @@ setup(
     keywords='',
     author='Spanish National Research Council',
     author_email='aloga@ifca.unican.es',
-    url='https://github.com/IFCA/keystone-voms',
-    download_url = 'https://github.com/IFCA/keystone-voms/archive/stable/grizzly.tar.gz',
+    url='http://ifca.github.io/keystone-voms',
+    download_url = 'https://github.com/IFCA/keystone-voms/archive/stable/havana.tar.gz',
     license='Apache License, Version 2.0',
     include_package_data=True,
     packages=['keystone_voms'],
     zip_safe=False,
     install_requires=[
         'setuptools',
+        'm2crypto',
         ],
     entry_points='''
 [paste.filter_factory]

@@ -18,7 +18,7 @@ import uuid
 
 import M2Crypto
 
-from keystone.common import logging
+from keystone.openstack.common import log
 from keystone.common import wsgi
 from keystone import exception
 from keystone import identity
@@ -28,7 +28,7 @@ from oslo.config import cfg
 
 from keystone_voms import voms_helper
 
-LOG = logging.getLogger(__name__)
+LOG = log.getLogger(__name__)
 
 CONF = cfg.CONF
 opts = [
@@ -218,8 +218,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         tenant_name = voinfo.get("tenant", "")
 
         try:
-            tenant_ref = self.identity_api.get_project_by_name(
-                self.identity_api, tenant_name, self.domain)
+            tenant_ref = self.identity_api.get_project_by_name(tenant_name,
+                                                               self.domain)
         except exception.ProjectNotFound:
             LOG.warning(_("VO mapping not properly configured for '%s'" %
                           user_vo))
@@ -238,24 +238,19 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             "enabled": True,
             "domain_id": self.domain,
         }
-        self.identity_api.create_user(self.identity_api,
-                                      user_id,
-                                      user)
+        self.identity_api.create_user(user_id, user)
         return user
 
     def _add_user_to_tenant(self, user_id, tenant_id):
         LOG.info(_("Automatically adding user %s to tenant %s") %
                    (user_id, tenant_id))
-        self.identity_api.add_user_to_project(self.identity_api,
-                                              tenant_id,
-                                              user_id)
+        self.identity_api.add_user_to_project(tenant_id, user_id)
 
     def _get_user(self, voms_info, req_tenant):
         user_dn = voms_info["user"]
         try:
-            user_ref = self.identity_api.get_user_by_name(self.identity_api,
-                                               user_dn,
-                                               self.domain)
+            user_ref = self.identity_api.get_user_by_name(user_dn,
+                                                          self.domain)
         except exception.UserNotFound:
             if CONF.voms.autocreate_users:
                 user_ref = self._create_user(user_dn)
@@ -269,9 +264,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             raise exception.Unauthorized
 
         if CONF.voms.autocreate_users:
-            tenants = self.identity_api.get_projects_for_user(
-                    self.identity_api,
-                    user_ref["id"])
+            tenants = self.identity_api.list_projects_for_user(user_ref["id"])
 
             if tenant not in tenants:
                 self._add_user_to_tenant(user_ref['id'], tenant['id'])
