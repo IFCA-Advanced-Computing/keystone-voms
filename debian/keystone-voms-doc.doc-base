@@ -1,0 +1,11 @@
+Document: keystone-voms-doc
+Title: Keystone VOMS module Documentation
+Author: Alvaro Lopez Garcia
+Abstract: Sphinx documentation for Keystone
+Section: Network/File Transfer
+
+Format: HTML
+Index: /usr/share/doc/keystone-voms-doc/html/index.html
+Files: /usr/share/doc/keystone-voms-doc/html/*
+
+
