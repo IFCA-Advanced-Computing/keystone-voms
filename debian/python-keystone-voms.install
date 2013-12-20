@@ -1,0 +1,2 @@
+usr/lib/python*/dist-packages/*
+etc/voms.json etc/keystone

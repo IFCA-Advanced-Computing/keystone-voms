@@ -1,0 +1,15 @@
+python-keystone-voms (2013.2-1) precise; urgency=low
+
+  * [810bd08] Updated readme and documentation
+  * [aec37af] Changes to work in Havana V2
+  * [3216925] Check for user membership in mapped tenant
+  * [afdef1e] Load the whole certificate chain.
+ 
+ -- Alvaro Lopez Garcia <aloga@ifca.unican.es>  Wed, 27 Nov 2013 12:10:15 +0100
+
+python-keystone-voms (1.0.2-ubuntu1) precise; urgency=low
+
+  * [a4db621] Add domains to identity API calls.
+  * [bb16b3e] Render exceptions properly.
+
+ -- Alvaro Lopez Garcia <aloga@ifca.unican.es>  Wed, 13 Feb 2013 17:41:49 +0100

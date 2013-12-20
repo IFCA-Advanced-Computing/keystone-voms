@@ -1,32 +1,48 @@
+VOMS Overview
+=============
+
+The VOMS service can issue x509 proxies based on RFC 3820
+(https://www.ietf.org/rfc/rfc3820.txt) by using the ``-rfc`` option in
+the comandline. Instead of using plain X.509 certificates this proxy can
+be used to authenticate against a properly configured Keystone server.
+
 Keystone VOMS Overview
 ======================
 
+Follow this guide to enable your Keystone running in the Havana version to be
+used with VOMS authentication. No modifications in the DB are needed, since it
+will be installed as an external plugin. Therefore, your Keystone will be usable
+with any other authentication mechanism that you had implemented (such as the
+native Keystone authentication).
+
 This VOMS authentication module assumes that Keystone is working behind
-an httpd server as a WSGI service with OpenSSL enabled. It only works with the
-V2 API of Keystone, since the V3 is still a work in progress.
+an http server as a WSGI application. SSL must be enabled in the http server.
 
-This module asumes that Keystone has support for external authentication
-as implemented in the `Pluggable Identity Authentication Handlers Blueprint`_. 
+Currently it only works with the V2 API of Keystone, a module compatible
+with the V3 API a work in progress.
 
-.. _Pluggable Identity Authentication Handlers Blueprint: https://blueprints.launchpad.net/keystone/+spec/pluggable-identity-authentication-handlers
+How does it work?
+=================
 
 SSL info is obtained from the request environment. The authentication module
-uses the voms library to check if the VOMS proxy is valid and if it is allowed
+uses the VOMS library to check if the VOMS proxy is valid and if it is allowed
 in this server. The mapping between a VO, VO group and a keystone tenant is
-made in a configurable JSON file.
+made in a configurable JSON file. For the moment there is no mapping for the
+Roles and/or Capabilities incoming from the VOMS credentials.
 
 The mapped local tenant must exist in advance for a user to be authenticated.
 If the mapped tenant doest not exist, the authentication will fail. The same
 applies for the user, with the particularity that the backend is able to
-autocreate new users if the ``autocreate_users`` is enabled in the
-configuration file. This option is disabled by default, but if you want to
-let all the users from a VO to get into your infrastructre you should consider
+autocreate new incoming users if the ``autocreate_users`` is enabled in the
+configuration file and the authentication is sucessful (i.e. the proxy is
+accepted and it is valid). This option is disabled by default, but if you want
+to let all the users from a VO to get into your infrastructure you should consider
 enabling it. Once a user has been granted access, you can manage it as you will
-do with any other user in keystone (i.e. disable/enable, grant/revoke roles,
+do with any other user in keystone (e.g. disable/enable, grant/revoke roles,
 etc.).
 
-In order to get a token, you must post a JSON request in the body containing
-the following::
+In order to get an unscoped token, you must POST to ``/tokens``, with the
+following JSON document document in the request::
 
     {
         "auth": {
@@ -34,24 +50,9 @@ the following::
         }
     }
 
-It is important to note here a difference between a VOMS backed keystone
-installation and a vanilla Keystone.
+This request should return you your an unscoped token. Next step is the
+discovery of your tenant (that may differ from the VO name). You have to use a
+GET request to ``/tenants`` passing the ID of your unscoped token (that you
+obtained before) in the ``X-Auth-Token`` header.
 
-In a normal keystone installation there are two types of possible request:
-unscoped and scoped. The unscoped requests works without specifying a
-``tenantName`` in the ``auth`` dictionary when making the request, whereas
-a scoped request needs of such field. The request above is an uscoped request,
-and the following is a scoped request::
-    
-    {
-        "auth": {
-            "voms": "true",
-            "tenantNane": "dteam",
-        }
-    }
-
-The particularity of the VOMS backend is that the user might not know to
-which tenant he is mapped to (because the mapping is made internally), thus
-the tenant name must be set to the VO name or the VOMS FQAN that he wants to
-use to authenticate.
-
+For further details, check the :doc:`test` section.

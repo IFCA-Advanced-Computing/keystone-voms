@@ -2,13 +2,18 @@
 Openstack Keystone VOMS module
 ==============================
 
-VOMS Introduction
-=================
+This module is intended to provide VOMS authentication to a Grizzly
+OpenStack Keystone. It is designed to be integrated as an external
+authentication plugin, so that Keystone will preserve its original
+features and users will still be able to authenticate using any of the
+Keystone native mechanisms.
 
-The VOMS service can issue x509 proxies based on RFC 3820
-(https://www.ietf.org/rfc/rfc3820.txt) by using the ``-rfc`` option in
-the comandline. Instead of using plain x509 certificates this proxy can
-be used to authenticate against a properly configured Keystone server.
+This documentation is based on an Havana installation. If you are using
+the Grizzly version, please check the `Grizzly Documentation
+<http://keystone-voms.readthedocs.org/en/stable-grizzly/>`_. However, Grizzly
+does not support usernames longer that 64 characters (`Bug #1081932
+<https://bugs.launchpad.net/keystone/+bug/1081932>`_, so installing Havana is
+the reccomended option.
 
 User documentation
 ==================

@@ -2,21 +2,24 @@ Requirements
 ============
 
 The Keystone VOMS authentication module requires some additional packages to be
-installed. Moreover, it requires that you run Keystone as a WSGI proccess behind
+installed. Moreover, it requires that you run Keystone as a WSGI application behind
 an HTTP server (Apache will be used in this documentation, but any webserver
 could make it).
 
-Required packages
------------------
+* Keystone >= Havana.
+* EUgridPMA CA certificates at the latest version.
+* fetch-crl package.
+* VOMS libraries.
+* HTTP server with WSGI enabled.
 
-EUgridPMA CA certificates
-~~~~~~~~~~~~~~~~~~~~~~~~~
+EUgridPMA CA certificates and fetch-crl
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You must have `EUgridPMA <http://www.eugridpma.org/>`_ certificates installed
-on its standard location (``/etc/grid-security/certificates``) and the 
+on its standard location (``/etc/grid-security/certificates``) and the
 ``fetch-crl`` package properly working so as have the CRLs up to date::
 
-    wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | apt-key add - 
+    wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | apt-key add -
     echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" > /etc/apt/sources.list.d/egi-cas.list
     sudo aptitude update
     sudo aptitude install ca-policy-egi-core
@@ -31,6 +34,7 @@ so get version 2.8.5 instead::
 
 VOMS libraries
 ~~~~~~~~~~~~~~
+
 You must install the VOMS libraries. Please install the ``libvomsapi1`` package in Debian/Ubuntu or
 ``voms`` package in RedHat/Fedora/ScientificLinux/etc.
 
@@ -49,61 +53,60 @@ certificates installed in the default location, otherwise you should adapt it to
 your needs). Either enable the ``default-ssl`` site (``a2ensite default-ssl``) and
 modify its configuration file (normally in ``/etc/apache2/sites-enabled/default-ssl``)
 or create a new configuration file for your keystone installation
-``/etc/apache2/sites-enabled/keystone``::
-
-    WSGIDaemonProcess keystone user=keystone group=nogroup processes=3 threads=10
+``/etc/apache2/sites-enabled/keystone``. Note that you need a valid certificate
+for the http server (``SSLCertificateKeyFile`` and ``SSLCACertificatePath``)::
 
     Listen 5000
     <VirtualHost _default_:5000>
-        LogLevel warn
-        ErrorLog ${APACHE_LOG_DIR}/error.log
-        CustomLog ${APACHE_LOG_DIR}/ssl_access.log combined
+        LogLevel     warn
+        ErrorLog    ${APACHE_LOG_DIR}/error.log
+        CustomLog   ${APACHE_LOG_DIR}/ssl_access.log combined
 
-        SSLEngine on
-        SSLCertificateFile    /etc/ssl/certs/ssl.cert
-        SSLCertificateKeyFile /etc/ssl/private/ssl.key
+        SSLEngine               on
+        SSLCertificateFile      /etc/ssl/certs/hostcert.pem
+        SSLCertificateKeyFile   /etc/ssl/private/hostkey.pem
+        SSLCACertificatePath    /etc/grid-security/certificates
+        SSLCARevocationPath     /etc/grid-security/certificates
+        SSLVerifyClient         optional
+        SSLVerifyDepth          10
+        SSLProtocol             all -SSLv2
+        SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
+        SSLOptions              +StdEnvVars +ExportCertData
 
-
-        SSLCACertificatePath /etc/grid-security/certificates
-        SSLCARevocationPath /etc/grid-security/certificates
-        SSLVerifyClient optional
-        SSLVerifyDepth 10
-        SSLProtocol all -SSLv2
-        SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
-        SSLOptions +StdEnvVars +ExportCertData
-
+        WSGIDaemonProcess keystone user=keystone group=nogroup processes=8 threads=1
         WSGIScriptAlias /  /usr/lib/cgi-bin/keystone/main
         WSGIProcessGroup keystone
     </VirtualHost>
 
     Listen 35357
     <VirtualHost _default_:35357>
-        LogLevel warn
-        ErrorLog ${APACHE_LOG_DIR}/error.log
-        CustomLog ${APACHE_LOG_DIR}/ssl_access.log combined
-    
-        SSLEngine on
-        SSLCertificateFile    /etc/ssl/certs/hostcert.pem
-        SSLCertificateKeyFile /etc/ssl/private/hostkey.pem
-    
-    
-        SSLCACertificatePath /etc/grid-security/certificates
-        SSLCARevocationPath /etc/grid-security/certificates
-        SSLVerifyClient optional
-        SSLVerifyDepth 10
-        SSLProtocol all -SSLv2
-        SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
-        SSLOptions +StdEnvVars +ExportCertData
-    
-        WSGIScriptAlias / /usr/lib/cgi-bin/keystone/admin
-        WSGIProcessGroup keystone
+        LogLevel    warn
+        ErrorLog    ${APACHE_LOG_DIR}/error.log
+        CustomLog   ${APACHE_LOG_DIR}/ssl_access.log combined
+
+        SSLEngine               on
+        SSLCertificateFile      /etc/ssl/certs/hostcert.pem
+        SSLCertificateKeyFile   /etc/ssl/private/hostkey.pem
+        SSLCACertificatePath    /etc/grid-security/certificates
+        SSLCARevocationPath     /etc/grid-security/certificates
+        SSLVerifyClient         optional
+        SSLVerifyDepth          10
+        SSLProtocol             all -SSLv2
+        SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
+        SSLOptions              +StdEnvVars +ExportCertData
+
+        WSGIDaemonProcess   keystoneapi user=keystone group=nogroup processes=8 threads=1
+        WSGIScriptAlias     / /usr/lib/cgi-bin/keystone/admin
+        WSGIProcessGroup    keystoneapi
     </VirtualHost>
 
+As you can see, the ``SSLVerifyClient`` is set to ``optional``, so that people
+without a VOMS proxy can authenticate using their Keystone credentials.
 
-To run keystone as a WSGI app you should create a WSGI script as the one
-included in the  `Github Keystone repository
-<https://github.com/openstack/keystone/blob/master/httpd/keystone.py>`_. Copy
-this script to ``/usr/lib/cgi-bin/keystone/keystone.py`` and create the
+To run Keystone as a WSGI applicantion you must create a WSGI script as the one
+already included in the  `Github Keystone repository
+<https://github.com/openstack/keystone/blob/stable/havana/httpd/keystone.py>`_.
+Copy this script to ``/usr/lib/cgi-bin/keystone/keystone.py`` and create the
 following links::
 
     sudo mkdir -p /usr/lib/cgi-bin/keystone
@@ -118,7 +121,8 @@ points to your keystone configuration file if it is not in the default location
 
 Also, do not forget to set the variable ``OPENSSL_ALLOW_PROXY_CERTS`` to
 ``1`` in your Apache environment (``/etc/apache2/envvars`` in Debian/Ubuntu) so
-that X.509 proxy certificates are accepted by OpenSSL.
+that X.509 proxy certificates are accepted by OpenSSL. This is an important
+thing, so please double check that you have really enabled it.
 
 With the above configuration, and assuming that the Keystone host is
 ``keystone.example.org`` the endpoints will be as follow:
@@ -159,7 +163,8 @@ URLs will be:
 * internal URL: ``https://keystone.example.org:5000/v2.0``
 
 If you are using the SQL backend for storing your catalog, you should adjust it
-manually to reflect the new endpoints.
+manually to reflect the new endpoints. Also, the rest of the OpenStack
+configuration should be adjusted.
 
 PKI Tokens
 ~~~~~~~~~~
@@ -180,6 +185,6 @@ have access to the configuration files. If you get this error::
     [error]     raise subprocess.CalledProcessError(retcode, "openssl")
     [error] CalledProcessError: Command 'openssl' returned non-zero exit status 3
 
-This may be that your keystone process cannot access the following file: 
+This may be that your keystone process cannot access the following file:
 ``/etc/keystone/ssl/private/signing_key.pem`` so please ensure that the keystone
 user can access that file.

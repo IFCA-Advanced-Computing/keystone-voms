@@ -1,7 +1,3 @@
-# coding=utf-8
-
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 #
 # Copyright (c) 2012, Spanish National Research Council
 #
@@ -17,38 +13,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-"""
-Setupstools script which defines an entry point which can be used for Keystone
-filter later.
-"""
+# THIS FILE IS MANAGED BY THE GLOBAL REQUIREMENTS REPO - DO NOT EDIT
+import setuptools
 
-from setuptools import setup
-
-
-setup(
-    name='keystone_voms',
-    version='2012.3-1',
-    description='Keystone VOMS module for Keystone (grizzly).',
-    long_description=("This package contains the VOMS external"
-                      " authentication module"),
-    classifiers=[
-        'Programming Language :: Python',
-        'Development Status :: 5 - Production/Stable',
-        'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
-        ],
-    keywords='',
-    author='Spanish National Research Council',
-    author_email='aloga@ifca.unican.es',
-    url='https://github.com/IFCA/keystone-voms',
-    license='Apache License, Version 2.0',
-    include_package_data=True,
-    packages=['keystone_voms'],
-    zip_safe=False,
-    install_requires=[
-        'setuptools',
-        ],
-    entry_points='''
-[paste.filter_factory]
-voms_filter = keystone_voms:VomsAuthNMiddleware.factory
-''',
-)
+setuptools.setup(
+        setup_requires=['pbr'],
+        pbr=True)
