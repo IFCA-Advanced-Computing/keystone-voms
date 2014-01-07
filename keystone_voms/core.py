@@ -273,7 +273,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                     self.identity_api,
                     user_ref["id"])
 
-            if tenant not in tenants:
+            if tenant['id'] not in tenants:
                 self._add_user_to_tenant(user_ref['id'], tenant['id'])
 
         return user_dn, tenant['name']
