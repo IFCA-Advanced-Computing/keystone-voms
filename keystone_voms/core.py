@@ -266,7 +266,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         if CONF.voms.autocreate_users:
             tenants = self.identity_api.list_projects_for_user(user_ref["id"])
 
-            if tenant not in tenants:
+            if tenant['id'] not in tenants:
                 self._add_user_to_tenant(user_ref['id'], tenant['id'])
 
         return user_dn, tenant['name']
