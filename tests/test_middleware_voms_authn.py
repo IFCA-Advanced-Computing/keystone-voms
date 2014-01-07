@@ -237,6 +237,26 @@ class MiddlewareVomsAuthn(test.TestCase):
         user_out = req.environ['REMOTE_USER']
         self.assertEqual(user_out, user_dn)
 
+    def test_middleware_proxy_user_not_found_autocreate_once(self):
+        """Verify that user is autocreated only once"""
+        CONF.voms.autocreate_users = True
+        req = prepare_request(get_auth_body(tenant="BAR"),
+                              valid_cert,
+                              valid_cert_chain)
+
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        user_out = req.environ['REMOTE_USER']
+        self.assertEqual(user_out, user_dn)
+
+        req = prepare_request(get_auth_body(tenant="BAR"),
+                              valid_cert,
+                              valid_cert_chain)
+        aux._process_request(req)
+        user_out = req.environ['REMOTE_USER']
+        self.assertEqual(user_out, user_dn)
+
     def test_middleware_proxy_user_not_found_autocreate_unscoped(self):
         """Verify that user is autocreated with unscoped request"""
         CONF.voms.autocreate_users = True
