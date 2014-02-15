@@ -21,12 +21,11 @@ from keystone import exception
 from keystone.identity import controllers
 from keystone import middleware
 from keystone import tests
+from keystone.tests import default_fixtures
+from keystone.tests import test_auth
+from keystone.tests.test_middleware import make_request
 
 import keystone_voms
-
-import default_fixtures
-import test_auth
-from test_middleware import make_request
 
 
 CONF = config.CONF
