@@ -24,9 +24,9 @@ from keystone import tests
 
 import keystone_voms
 
-import default_fixtures
-import test_auth
-from test_middleware import make_request
+from keystone.tests import default_fixtures
+from keystone.tests import test_auth
+from keystone.tests.test_middleware import make_request
 
 
 CONF = config.CONF
