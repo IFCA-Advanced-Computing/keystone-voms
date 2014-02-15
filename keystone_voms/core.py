@@ -20,10 +20,11 @@ import M2Crypto
 
 from keystone.openstack.common import log
 from keystone.common import wsgi
-from keystone import exception
-from keystone import identity
+from keystone import exception, middleware
+from keystone import identity, assignment
 import keystone.middleware
 from keystone.openstack.common import jsonutils
+
 from oslo.config import cfg
 
 from keystone_voms import voms_helper
@@ -50,6 +51,10 @@ opts = [
                 help="If enabled, user not found on the local Identity "
                 "backend will be created and added to the tenant "
                 "automatically"),
+    cfg.BoolOpt("add_swiftrole",
+                default=True,
+                help="If enabled, user will get 'swiftrole' when created."),
+
 ]
 CONF.register_opts(opts, group="voms")
 
@@ -113,6 +118,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
     """
     def __init__(self, *args, **kwargs):
         self.identity_api = identity.Manager()
+        self.assignment_api = assignment.Manager()
 
         # VOMS stuff
         try:
@@ -245,6 +251,26 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         LOG.info(_("Automatically adding user %s to tenant %s") %
                    (user_id, tenant_id))
         self.identity_api.add_user_to_project(tenant_id, user_id)
+    
+    def _add_user_roles(self, user_id, tenant_id, vo_name):
+        role_ids = [vo_name]
+        # Keystone KVS backend sets unique constraint on both role and role_id. Both of them can be strings.
+        # However, a lookup for a role by name is not implemented/requires more patches to the upstream 
+        if CONF.voms.add_swiftrole:
+            role_ids.append('swiftoperator')
+        for r_id in role_ids:
+            try:
+                role = self.assignment_api.get_role(r_id)
+            except exception.RoleNotFound:
+                LOG.info(_("Role with id '%s' does not exist. Auto-creating."))
+                role = {'id': r_id,
+                        'name': r_id}
+                self.assignment_api.driver.create_role(r_id, role)
+            
+            self.assignment_api.driver.add_role_to_user_and_project(
+                     user_id,
+                     tenant_id,
+                     r_id) 
 
     def _get_user(self, voms_info, req_tenant):
         user_dn = voms_info["user"]
@@ -268,6 +294,12 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
             if tenant not in tenants:
                 self._add_user_to_tenant(user_ref['id'], tenant['id'])
+            
+            # update user roles
+            roles = self.assignment_api.get_roles_for_user_and_project(user_ref['id'], tenant['id'])
+            voms_name = voms_info['voname']
+            if voms_name is not None and not voms_name in roles:
+                self._add_user_roles(user_ref['id'], tenant['id'], voms_name)
 
         return user_dn, tenant['name']
 
