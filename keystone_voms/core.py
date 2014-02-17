@@ -54,7 +54,9 @@ opts = [
     cfg.BoolOpt("add_swiftrole",
                 default=True,
                 help="If enabled, user will get 'swiftrole' when created."),
-
+    cfg.StrOpt("swiftoperator_name",
+               default="swiftoperator",
+               help="Name of the role that allows access to Swift."),
 ]
 CONF.register_opts(opts, group="voms")
 
@@ -257,7 +259,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         # Keystone KVS backend sets unique constraint on both role and role_id. Both of them can be strings.
         # However, a lookup for a role by name is not implemented/requires more patches to the upstream
         if CONF.voms.add_swiftrole:
-            role_ids.append('swiftoperator')
+            role_ids.append(CONF.voms.swiftoperator_name)
         for r_id in role_ids:
             try:
                 role = self.assignment_api.get_role(r_id)
