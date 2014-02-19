@@ -1,5 +1,4 @@
-Keystone VOMS authentication module
-===================================
+# Keystone VOMS auth module [![Build Status](https://travis-ci.org/alvarolopez/keystone-voms.png?branch=master)](https://travis-ci.org/alvarolopez/keystone-voms)
 
 This module is intended to provide VOMS authentication to a Grizzly
 OpenStack Keystone. It is designed to be integrated as an external
@@ -13,5 +12,10 @@ The documentation (the source is in ``doc/source/``) is online at
 If you are using it, it would be nice that you add your site to the
 [Sites Using It](https://github.com/IFCA/keystone-voms/wiki/SitesUsingIt) wiki page.
 
-If you are interested in running the unit test, check the ``TESTING.md``
+## Testing
+
+If you are interested in running the unit tests, check the ``TESTING.md``
 file for instructions.
+
+[Build Status]: https://travis-ci.org/alvarolopez/keystone-voms
+[BS img]: https://travis-ci.org/alvarolopez/keystone-voms.png
