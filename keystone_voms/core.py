@@ -17,14 +17,14 @@
 import uuid
 
 import M2Crypto
+from oslo.config import cfg
 
-from keystone.openstack.common import log
 from keystone.common import wsgi
 from keystone import exception
 from keystone import identity
 import keystone.middleware
 from keystone.openstack.common import jsonutils
-from oslo.config import cfg
+from keystone.openstack.common import log
 
 from keystone_voms import voms_helper
 
@@ -221,8 +221,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             tenant_ref = self.identity_api.get_project_by_name(tenant_name,
                                                                self.domain)
         except exception.ProjectNotFound:
-            LOG.warning(_("VO mapping not properly configured for '%s'" %
-                          user_vo))
+            LOG.warning(_("VO mapping not properly configured for '%s'") %
+                        user_vo)
             raise exception.Unauthorized("Your VO is not authorized")
 
         return tenant_ref
@@ -230,7 +230,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
     def _create_user(self, user_dn):
         user_id = uuid.uuid4().hex
         LOG.info(_("Autocreating REMOTE_USER %s with id %s") %
-                   (user_id, user_dn))
+                 (user_id, user_dn))
         # TODO(aloga): add backend information in user referece?
         user = {
             "id": user_id,
@@ -243,7 +243,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
     def _add_user_to_tenant(self, user_id, tenant_id):
         LOG.info(_("Automatically adding user %s to tenant %s") %
-                   (user_id, tenant_id))
+                 (user_id, tenant_id))
         self.identity_api.add_user_to_project(tenant_id, user_id)
 
     def _get_user(self, voms_info, req_tenant):

@@ -14,11 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import commands
 import ctypes
-import os
-
-import M2Crypto
 
 
 class _voms(ctypes.Structure):

@@ -8,13 +8,6 @@ If you are using the Grizzly version, please check the `Grizzly Documentation
 Install the Keystone VOMS module
 --------------------------------
 
-Install from the Python Package Index
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-You can install it directly from PyPI::
-
-    pip install keystone_voms
-
 Install from PPA
 ~~~~~~~~~~~~~~~~
 

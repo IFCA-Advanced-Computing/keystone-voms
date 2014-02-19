@@ -15,8 +15,8 @@ Then, activate the virtualenv and install the VOMS module into it::
 
 Copy the tests and run them::
 
-    cp /path/to/the/keystone/voms/module/tests/* /tmp/keystone/tests
+    cp /path/to/the/keystone/voms/module/tests/* /tmp/keystone/keystone/tests
     cd /tmp/keystone/
-    ./run_tests.sh test_middleware_voms_authn
+    ./run_tests.sh
 
 You should get no errors at this point.
