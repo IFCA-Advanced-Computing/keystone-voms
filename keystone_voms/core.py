@@ -254,8 +254,9 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                    (user_id, tenant_id))
         self.identity_api.add_user_to_project(tenant_id, user_id)
     
-    def _add_user_roles(self, user_id, tenant_id, vo_name):
-        role_ids = [vo_name]
+    def _add_user_roles(self, user_id, tenant_id):
+        """Add user roles to the (user, tenant) pair."""
+        role_ids = []
         # Keystone KVS backend sets unique constraint on both role and role_id. Both of them can be strings.
         # However, a lookup for a role by name is not implemented/requires more patches to the upstream 
         if CONF.voms.add_swiftrole:
@@ -297,11 +298,11 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             if tenant not in tenants:
                 self._add_user_to_tenant(user_ref['id'], tenant['id'])
             
-            # update user roles
+            # optionally add a role for accessing swift
             roles = self.assignment_api.get_roles_for_user_and_project(user_ref['id'], tenant['id'])
-            voms_name = voms_info['voname']
-            if voms_name is not None and not voms_name in roles:
-                self._add_user_roles(user_ref['id'], tenant['id'], voms_name)
+
+            if CONF.voms.add_swiftrole and not CONF.voms.swiftoperator_name in roles:
+                self._add_user_roles(user_ref['id'], tenant['id'])
 
         return user_dn, tenant['name']
 
