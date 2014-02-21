@@ -266,10 +266,12 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         # a get_role_by_name would be useful
         user_roles = self.assignment_api.get_roles_for_user_and_project(
             user_id, tenant_id)
-        role_names = set([self.assignment_api.get_role(role_id).get('name')
-                          for role_id in user_roles])
+        role_names = [self.assignment_api.get_role(role_id).get('name')
+                      for role_id in user_roles]
         # add missing roles
-        for r_name in set(CONF.voms.user_roles) - role_names:
+        for r_name in CONF.voms.user_roles:
+            if r_name in role_names:
+                continue
             role = self._search_role(r_name)
             if not role:
                 LOG.info(_("Role with name '%s' not found. Autocreating.")
