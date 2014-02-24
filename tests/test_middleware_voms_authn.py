@@ -148,6 +148,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
                      tests.testsdir('keystone_voms.conf')])
         self.load_backends()
         self.load_fixtures(default_fixtures)
+        self.tenant_name = default_fixtures.TENANTS[0]['name']
 
     def test_middleware_proxy_unscoped(self):
         """Verify unscoped request."""
@@ -164,7 +165,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_scoped(self):
         """Verify scoped request."""
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -188,7 +189,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_tenant_not_found(self):
         """Verify that mapping to a non existing tenant raises exception."""
         CONF.voms.voms_policy = "voms_no_tenant.json"
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -201,7 +202,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_vo_not_found(self):
         """Verify that no VO-tenant mapping raises exception."""
         CONF.voms.voms_policy = "voms_no_vo.json"
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -214,7 +215,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_vo_not_found_unscoped(self):
         """Verify that no VO-tenant mapping raises exception."""
         CONF.voms.voms_policy = "voms_no_vo.json"
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -227,7 +228,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_autocreate(self):
         """Verify that user is autocreated."""
         CONF.voms.autocreate_users = True
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -239,7 +240,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_autocreate_once(self):
         """Verify that user is autocreated only once."""
         CONF.voms.autocreate_users = True
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
 
@@ -249,7 +250,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         user_out = req.environ['REMOTE_USER']
         self.assertEqual(user_out, user_dn)
 
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux._process_request(req)
@@ -271,7 +272,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_autocreate_chain(self):
         """Verify that an unscoped req creates the user in the tenant."""
         CONF.voms.autocreate_users = True
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -281,7 +282,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         self.assertEqual(user_out, user_dn)
         # Ensure that we are geting the user already created
         CONF.voms.autocreate_users = False
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -306,7 +307,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_not_autocreate_unscoped(self):
         """Verify that user is not autocreated with unscoped request."""
         CONF.voms.autocreate_users = False
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -372,6 +373,8 @@ class VomsTokenService(test_auth.AuthTest):
         self.config([tests.etcdir('keystone.conf.sample'),
                      tests.testsdir('test_overrides.conf'),
                      tests.testsdir('keystone_voms.conf')])
+        self.tenant_name = default_fixtures.TENANTS[0]['name']
+        self.tenant_id = default_fixtures.TENANTS[0]['id']
 
     def test_unscoped_remote_authn(self):
         """Verify unscoped request."""
@@ -420,13 +423,13 @@ class VomsTokenService(test_auth.AuthTest):
         }
         tenants = tenant_controller.get_projects_for_token(fake_context)
         self.assertItemsEqual(
-            ("bar", tenant_id),  # User tenants
+            (self.tenant_id, tenant_id),  # User tenants
             [i["id"].lower() for i in tenants["tenants"]]
         )
 
     def test_scoped_remote_authn(self):
         """Verify unscoped request."""
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -437,5 +440,5 @@ class VomsTokenService(test_auth.AuthTest):
                                                     params["auth"])
         self.assertEqual(user_dn,
                          remote_token["access"]["user"]["username"])
-        self.assertEqual("BAR",
+        self.assertEqual(self.tenant_name,
                          remote_token["access"]["token"]["tenant"]["name"])
