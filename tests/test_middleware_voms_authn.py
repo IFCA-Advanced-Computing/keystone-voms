@@ -24,9 +24,9 @@ from keystone import tests
 
 import keystone_voms
 
-import default_fixtures
-import test_auth
-from test_middleware import make_request
+from keystone.tests import default_fixtures
+from keystone.tests import test_auth
+from keystone.tests.test_middleware import make_request
 
 
 CONF = config.CONF
@@ -149,6 +149,8 @@ class MiddlewareVomsAuthn(tests.TestCase):
                      tests.testsdir('keystone_voms.conf')])
         self.load_backends()
         self.load_fixtures(default_fixtures)
+        self.tenant_id = default_fixtures.TENANTS[0]['id']
+        self.tenant_name = default_fixtures.TENANTS[0]['name']
 
     def test_middleware_proxy_unscoped(self):
         """Verify unscoped request."""
@@ -165,7 +167,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_scoped(self):
         """Verify scoped request."""
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -189,7 +191,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_tenant_not_found(self):
         """Verify that mapping to a non existing tenant raises exception."""
         CONF.voms.voms_policy = "voms_no_tenant.json"
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -202,7 +204,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_vo_not_found(self):
         """Verify that no VO-tenant mapping raises exception."""
         CONF.voms.voms_policy = "voms_no_vo.json"
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -215,7 +217,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_vo_not_found_unscoped(self):
         """Verify that no VO-tenant mapping raises exception."""
         CONF.voms.voms_policy = "voms_no_vo.json"
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -228,7 +230,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_autocreate(self):
         """Verify that user is autocreated."""
         CONF.voms.autocreate_users = True
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -240,7 +242,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_autocreate_once(self):
         """Verify that user is autocreated only once."""
         CONF.voms.autocreate_users = True
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
 
@@ -250,7 +252,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         user_out = req.environ['REMOTE_USER']
         self.assertEqual(user_out, user_dn)
 
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux._process_request(req)
@@ -272,7 +274,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_autocreate_chain(self):
         """Verify that an unscoped req creates the user in the tenant."""
         CONF.voms.autocreate_users = True
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -282,7 +284,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         self.assertEqual(user_out, user_dn)
         # Ensure that we are geting the user already created
         CONF.voms.autocreate_users = False
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -307,7 +309,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
     def test_middleware_proxy_user_not_found_not_autocreate_unscoped(self):
         """Verify that user is not autocreated with unscoped request."""
         CONF.voms.autocreate_users = False
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -373,6 +375,8 @@ class VomsTokenService(test_auth.AuthTest):
         self.config([tests.etcdir('keystone.conf.sample'),
                      tests.testsdir('test_overrides.conf'),
                      tests.testsdir('keystone_voms.conf')])
+        self.tenant_id = default_fixtures.TENANTS[0]['id']
+        self.tenant_name = default_fixtures.TENANTS[0]['name']
 
     def test_unscoped_remote_authn(self):
         """Verify unscoped request."""
@@ -390,7 +394,6 @@ class VomsTokenService(test_auth.AuthTest):
 
     def test_unscoped_remote_authn_existing_user_in_tenant(self):
         """Verify unscoped request for existing user, already in a tenant."""
-
         user_id = uuid.uuid4().hex
         user = {
             "id": user_id,
@@ -421,13 +424,13 @@ class VomsTokenService(test_auth.AuthTest):
         }
         tenants = tenant_controller.get_projects_for_token(fake_context)
         self.assertItemsEqual(
-            ("bar", tenant_id),  # User tenants
+            (self.tenant_id, tenant_id),  # User tenants
             [i["id"].lower() for i in tenants["tenants"]]
         )
 
     def test_scoped_remote_authn(self):
         """Verify unscoped request."""
-        req = prepare_request(get_auth_body(tenant="BAR"),
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
         aux = keystone_voms.VomsAuthNMiddleware(None)
@@ -438,5 +441,97 @@ class VomsTokenService(test_auth.AuthTest):
                                                     params["auth"])
         self.assertEqual(user_dn,
                          remote_token["access"]["user"]["username"])
-        self.assertEqual("BAR",
+        self.assertEqual(self.tenant_name,
                          remote_token["access"]["token"]["tenant"]["name"])
+
+    def test_scoped_remote_authn_add_roles_created_user(self):
+        """Verify roles are added when user is created on authentication."""
+        CONF.voms.add_roles = True
+        CONF.voms.user_roles = ["role1", "role2"]
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertIn("role1", roles)
+        self.assertIn("role2", roles)
+
+    def test_scoped_remote_authn_add_roles_existing_user(self):
+        """Verify roles are updated for existing user."""
+        CONF.voms.add_roles = True
+        CONF.voms.user_roles = ["role1", "role2"]
+        user_id = uuid.uuid4().hex
+        user = {
+            "id": user_id,
+            "name": user_dn,
+            "enabled": True,
+            "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
+        }
+        self.identity_api.create_user(user_id, user)
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertIn("role1", roles)
+        self.assertIn("role2", roles)
+
+    def test_scoped_remote_authn_update_roles_existing_user(self):
+        """Verify roles are not re-added to existing user."""
+        CONF.voms.add_roles = True
+        CONF.voms.user_roles = ["role1", "role2"]
+        user_id = uuid.uuid4().hex
+        user = {
+            "id": user_id,
+            "name": user_dn,
+            "enabled": True,
+            "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
+        }
+        # Create the user and add to tenant
+        self.identity_api.create_user(user_id, user)
+        self.identity_api.add_user_to_project(self.tenant_id, user_id)
+        # create roles and add them to user
+        for r in CONF.voms.user_roles:
+            self.assignment_api.create_role(r, {'id': r, 'name': r})
+            self.assignment_api.add_role_to_user_and_project(user_id,
+                                                             self.tenant_id,
+                                                             r)
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertIn("role1", roles)
+        self.assertIn("role2", roles)
+
+    def test_scoped_remote_authn_add_roles_disabled(self):
+        """Verify plugin does not try to add roles to user if disabled."""
+        CONF.voms.add_roles = False
+        CONF.voms.user_roles = ["role1", "role2"]
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertNotIn("role1", roles)
+        self.assertNotIn("role2", roles)
