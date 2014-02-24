@@ -15,12 +15,16 @@ under the ``[voms]`` section::
     voms_policy = /etc/keystone/voms.json
     vomsapi_lib = libvomsapi.so.1
     autocreate_users = False
+    add_roles = False
+    user_roles = _member_
 
 * ``vomsdir_path``: Path storing the ``.lsc`` files.
 * ``ca_path``: Path where the CAs and CRLs are stored.
 * ``voms_policy``: JSON file containing the VO/tenant/role mapping.
 * ``vomsapi_lib``: Path to the voms library to use.
 * ``autocreate_users``: Whether a user should be autocreated if it does not exist.
+* ``add_roles``: Whether roles should be added to users or not.
+* ``user_roles``: list of role names to add to the users (if ``add_roles`` is ``True``).
 
 Allowed VOs
 -----------
