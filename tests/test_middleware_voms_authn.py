@@ -442,3 +442,95 @@ class VomsTokenService(test_auth.AuthTest):
                          remote_token["access"]["user"]["username"])
         self.assertEqual(self.tenant_name,
                          remote_token["access"]["token"]["tenant"]["name"])
+
+    def test_scoped_remote_authn_add_roles_created_user(self):
+        """Verify roles are added when user is created on authentication."""
+        CONF.voms.add_roles = True
+        CONF.voms.user_roles = ["role1", "role2"]
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertIn("role1", roles)
+        self.assertIn("role2", roles)
+
+    def test_scoped_remote_authn_add_roles_existing_user(self):
+        """Verify roles are updated for existing user."""
+        CONF.voms.add_roles = True
+        CONF.voms.user_roles = ["role1", "role2"]
+        user_id = uuid.uuid4().hex
+        user = {
+            "id": user_id,
+            "name": user_dn,
+            "enabled": True,
+            "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
+        }
+        self.identity_api.create_user(user_id, user)
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertIn("role1", roles)
+        self.assertIn("role2", roles)
+
+    def test_scoped_remote_authn_update_roles_existing_user(self):
+        """Verify roles are not re-added to existing user."""
+        CONF.voms.add_roles = True
+        CONF.voms.user_roles = ["role1", "role2"]
+        user_id = uuid.uuid4().hex
+        user = {
+            "id": user_id,
+            "name": user_dn,
+            "enabled": True,
+            "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
+        }
+        # Create the user and add to tenant
+        self.identity_api.create_user(user_id, user)
+        self.identity_api.add_user_to_project(self.tenant_id, user_id)
+        # create roles and add them to user
+        for r in CONF.voms.user_roles:
+            self.assignment_api.create_role(r, {'id': r, 'name': r})
+            self.assignment_api.add_role_to_user_and_project(user_id,
+                                                             self.tenant_id,
+                                                             r)
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertIn("role1", roles)
+        self.assertIn("role2", roles)
+
+    def test_scoped_remote_authn_add_roles_disabled(self):
+        """Verify plugin does not try to add roles to user if disabled."""
+        CONF.voms.add_roles = False
+        CONF.voms.user_roles = ["role1", "role2"]
+        req = prepare_request(get_auth_body(tenant=self.tenant_name),
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req)
+        params = req.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req.environ,
+                                                    params["auth"])
+        roles = [r['name'] for r in remote_token['access']['user']['roles']]
+        self.assertNotIn("role1", roles)
+        self.assertNotIn("role2", roles)
