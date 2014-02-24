@@ -52,7 +52,7 @@ opts = [
                      "backend will be created and added to the tenant "
                      "automatically"),
     cfg.BoolOpt("add_roles",
-                default=True,
+                default=False,
                 help="If enabled, users will get the roles defined in "
                      "'user_roles' when created."),
     cfg.ListOpt("user_roles",
