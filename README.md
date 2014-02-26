@@ -1,4 +1,4 @@
-# Keystone VOMS auth module [![Build Status](https://travis-ci.org/alvarolopez/keystone-voms.png?branch=stable/havana)](https://travis-ci.org/alvarolopez/keystone-voms)
+# Keystone VOMS auth module [![Build Status](https://travis-ci.org/IFCA/keystone-voms.png?branch=stable/havana)](https://travis-ci.org/IFCA/keystone-voms)
 
 This module is intended to provide VOMS authentication to a Grizzly
 OpenStack Keystone. It is designed to be integrated as an external
@@ -17,5 +17,5 @@ If you are using it, it would be nice that you add your site to the
 If you are interested in running the unit tests, check the ``TESTING.md``
 file for instructions.
 
-[Build Status]: https://travis-ci.org/alvarolopez/keystone-voms
-[BS img]: https://travis-ci.org/alvarolopez/keystone-voms.png
+[Build Status]: https://travis-ci.org/IFCA/keystone-voms
+[BS img]: https://travis-ci.org/IFCA/keystone-voms.png
