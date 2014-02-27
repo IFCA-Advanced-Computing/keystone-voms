@@ -20,10 +20,11 @@ from keystone import config
 from keystone import exception
 from keystone.identity import controllers
 from keystone import middleware
+from keystone.openstack.common import jsonutils
 from keystone import tests
 from keystone.tests import default_fixtures
 from keystone.tests import test_auth
-from keystone.tests.test_middleware import make_request
+from keystone.tests.test_middleware import make_request, make_response
 
 import keystone_voms
 
@@ -34,41 +35,69 @@ CONF = config.CONF
 user_dn = "/C=ES/O=FAKE CA/CN=Fake User"
 user_vo = "dteam"
 valid_cert = """-----BEGIN CERTIFICATE-----
-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
-W5Rbega2GkADBQ==
------END CERTIFICATE----- """
+MIIFbjCCBRigAwIBAgICEAEwDQYJKoZIhvcNAQEFBQAwMzELMAkGA1UEBhMCRVMx
+EDAOBgNVBAoMB0ZBS0UgQ0ExEjAQBgNVBAMMCUZha2UgVXNlcjAeFw0xNDAzMDcx
+NTE0MzJaFw0xNTAzMDcxNTEzMzFaMEMxCzAJBgNVBAYTAkVTMRAwDgYDVQQKDAdG
+QUtFIENBMRIwEAYDVQQDDAlGYWtlIFVzZXIxDjAMBgNVBAMTBXByb3h5MIGfMA0G
+CSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrbByGElKKnl+KOsu+3rliwZd7ECcXoBR2
+0yP/UZgquXfWairX/QIqlkHUVkJm162e3BJYNsbTHgvNi0G8xF+tZoST/piPHp8c
+p4BN/j7+ivFPDr/hzfcDSlbiW5oVPS79lF388KeS1ugjRlZ39fp0abqhH9tHnNYV
++2mogs2y1QIDAQABo4IDwDCCA7wwggN6BgorBgEEAb5FZGQFBIIDajCCA2YwggNi
+MIIDXjCCAwgCAQEwP6A9MDekNTAzMQswCQYDVQQGEwJFUzEQMA4GA1UECgwHRkFL
+RSBDQTESMBAGA1UEAwwJRmFrZSBVc2VyAgIQAaA5MDekNTAzMQswCQYDVQQGEwJF
+UzEQMA4GA1UECgwHRkFLRSBDQTESMBAGA1UEAwwJdm8uc2VydmVyMA0GCSqGSIb3
+DQEBBQUAAgEBMCIYDzIwMTQwMzA3MTUxOTMyWhgPMjAyMzAzMDUxNTE5MzJaMEIw
+QAYKKwYBBAG+RWRkBDEyMDCgCoYIZHRlYW06Ly8wIgQgL2R0ZWFtL1JvbGU9TlVM
+TC9DYXBhYmlsaXR5PU5VTEwwggILMIIB2wYKKwYBBAG+RWRkCgSCAcswggHHMIIB
+wzCCAb8wggFpoAMCAQICAhAAMA0GCSqGSIb3DQEBBQUAMB8xCzAJBgNVBAYTAkVT
+MRAwDgYDVQQKDAdGQUtFIENBMB4XDTE0MDMwNzE1MTA1NloXDTE1MDMwNzE1MTA1
+NlowMzELMAkGA1UEBhMCRVMxEDAOBgNVBAoMB0ZBS0UgQ0ExEjAQBgNVBAMMCXZv
+LnNlcnZlcjBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQDfesNHVPkdxCQcX3Aq71XA
+8/vZysZ/CDRj9LQWNhoqXPjb1zc23L/rvjAZxFj+4NLA3nyO0WEQWwqBkMMSThdN
+AgMBAAGjezB5MAkGA1UdEwQCMAAwLAYJYIZIAYb4QgENBB8WHU9wZW5TU0wgR2Vu
+ZXJhdGVkIENlcnRpZmljYXRlMB0GA1UdDgQWBBTLUv7L69wZLJkJjRoQWO9poNMb
+lzAfBgNVHSMEGDAWgBT4zG7I0zoiqxp0kB8pI2Zs3fM4QzANBgkqhkiG9w0BAQUF
+AANBABEZZ2DlG4EZba71aeiqGcBrUQdw+7QVQbt2PRKKIbq+nwxo/bO4KhpRg/0l
+ocmWhaXt8dAA1x9vl4gZpM4d6k0wCQYDVR04BAIFADAfBgNVHSMEGDAWgBTLUv7L
+69wZLJkJjRoQWO9poNMblzANBgkqhkiG9w0BAQUFAANBAJaxrvkxHjly9GdY+pcZ
+AaLb9+4Re/pNiAuvyCXvPt1kZjGkTrYeFDJVy2Si3m5PEfs8zNu7/WFV8mtJ14O7
+ZGwwDQYDVR0PAQH/BAMDAQAwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBQKznTb
+hGZG2a4auaivGQEdepyg0DANBgkqhkiG9w0BAQUFAANBALPDO7pWcfRhiiEF+G0/
+H3Q1KTtztRZX5N0GJSsvpgwb4wx4cs+8pU7Srh6CCJtkp5C1I8B7ExsYbDo9A34f
+4JY=
+-----END CERTIFICATE-----"""
+
+valid_cert_ops = """-----BEGIN CERTIFICATE-----
+MIIFajCCBRSgAwIBAgICEAEwDQYJKoZIhvcNAQEFBQAwMzELMAkGA1UEBhMCRVMx
+EDAOBgNVBAoMB0ZBS0UgQ0ExEjAQBgNVBAMMCUZha2UgVXNlcjAeFw0xNDAzMDcx
+NTE4MjRaFw0xNTAzMDcxNTEzMzFaMEMxCzAJBgNVBAYTAkVTMRAwDgYDVQQKDAdG
+QUtFIENBMRIwEAYDVQQDDAlGYWtlIFVzZXIxDjAMBgNVBAMTBXByb3h5MIGfMA0G
+CSqGSIb3DQEBAQUAA4GNADCBiQKBgQCkRl6cfNS2QxSzPaonT9GvkildBulUfIsQ
+73L4OzLZc0bAE9AE02T+F6v93L2TCwiNXaH540KEBGO1NdHNN01WcfY5wDmKheaO
+3IOCHb2JqAC5MlQFUnBOdtm6KSaTupa2O9qTus9LY/CwmwBH0EmofSoQSX9ZyBfa
+qwWwMFATrQIDAQABo4IDvDCCA7gwggN2BgorBgEEAb5FZGQFBIIDZjCCA2IwggNe
+MIIDWjCCAwQCAQEwP6A9MDekNTAzMQswCQYDVQQGEwJFUzEQMA4GA1UECgwHRkFL
+RSBDQTESMBAGA1UEAwwJRmFrZSBVc2VyAgIQAaA5MDekNTAzMQswCQYDVQQGEwJF
+UzEQMA4GA1UECgwHRkFLRSBDQTESMBAGA1UEAwwJdm8uc2VydmVyMA0GCSqGSIb3
+DQEBBQUAAgEBMCIYDzIwMTQwMzA3MTUyMzI0WhgPMjAyMzAzMDUxNTIzMjRaMD4w
+PAYKKwYBBAG+RWRkBDEuMCygCIYGb3BzOi8vMCAEHi9vcHMvUm9sZT1OVUxML0Nh
+cGFiaWxpdHk9TlVMTDCCAgswggHbBgorBgEEAb5FZGQKBIIByzCCAccwggHDMIIB
+vzCCAWmgAwIBAgICEAAwDQYJKoZIhvcNAQEFBQAwHzELMAkGA1UEBhMCRVMxEDAO
+BgNVBAoMB0ZBS0UgQ0EwHhcNMTQwMzA3MTUxMDU2WhcNMTUwMzA3MTUxMDU2WjAz
+MQswCQYDVQQGEwJFUzEQMA4GA1UECgwHRkFLRSBDQTESMBAGA1UEAwwJdm8uc2Vy
+dmVyMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAN96w0dU+R3EJBxfcCrvVcDz+9nK
+xn8INGP0tBY2Gipc+NvXNzbcv+u+MBnEWP7g0sDefI7RYRBbCoGQwxJOF00CAwEA
+AaN7MHkwCQYDVR0TBAIwADAsBglghkgBhvhCAQ0EHxYdT3BlblNTTCBHZW5lcmF0
+ZWQgQ2VydGlmaWNhdGUwHQYDVR0OBBYEFMtS/svr3BksmQmNGhBY72mg0xuXMB8G
+A1UdIwQYMBaAFPjMbsjTOiKrGnSQHykjZmzd8zhDMA0GCSqGSIb3DQEBBQUAA0EA
+ERlnYOUbgRltrvVp6KoZwGtRB3D7tBVBu3Y9Eoohur6fDGj9s7gqGlGD/SWhyZaF
+pe3x0ADXH2+XiBmkzh3qTTAJBgNVHTgEAgUAMB8GA1UdIwQYMBaAFMtS/svr3Bks
+mQmNGhBY72mg0xuXMA0GCSqGSIb3DQEBBQUAA0EAnAla85kPlMPoxeR9DdgFAzws
+VzuLJgIyVzEWZT8V3MtFSid0uag3MdWa2HuPlJWHnbTfQtTh1VSHWLT3HfBAITAN
+BgNVHQ8BAf8EAwMBADAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFArOdNuEZkbZ
+rhq5qK8ZAR16nKDQMA0GCSqGSIb3DQEBBQUAA0EAjWmZ1TQJnZjwTeGrCKyObvJo
+malXGGFFp8UB8+bLfJbRfgRuAICdhxnVG22ktAnszYTGP4vhXJ9UsKvkb4jKxg==
+-----END CERTIFICATE-----"""
 
 valid_cert_chain = """-----BEGIN CERTIFICATE-----
 MIIBwTCCASoCAQYwDQYJKoZIhvcNAQEEBQAwHzEQMA4GA1UEChMHRkFLRSBDQTEL
@@ -366,6 +395,23 @@ class MiddlewareVomsAuthn(tests.TestCase):
             keystone_voms.VomsAuthNMiddleware,
             None)
 
+    def test_middleware_applicable_with_proxy(self):
+        """Verify that the middleware is applicable when a proxy is
+           included in the request even without body."""
+        req = prepare_request(None,
+                              valid_cert,
+                              valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        ret = aux._process_request(req)
+        self.assertEqual(ret, None)
+
+    def test_middleware_should_process_response(self):
+        """Verify response is processed when there is a list of tenants."""
+        resp = make_response(body=jsonutils.dumps({"tenants": [{}]}))
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        self.assertTrue(aux.should_process_response(None, resp)) 
+
 
 class VomsTokenService(test_auth.AuthTest):
     def setUp(self):
@@ -375,6 +421,7 @@ class VomsTokenService(test_auth.AuthTest):
                      tests.testsdir('keystone_voms.conf')])
         self.tenant_name = default_fixtures.TENANTS[0]['name']
         self.tenant_id = default_fixtures.TENANTS[0]['id']
+        self.aux_tenant_name = default_fixtures.TENANTS[1]['name']
 
     def test_unscoped_remote_authn(self):
         """Verify unscoped request."""
@@ -428,7 +475,7 @@ class VomsTokenService(test_auth.AuthTest):
         )
 
     def test_scoped_remote_authn(self):
-        """Verify unscoped request."""
+        """Verify scoped request."""
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -534,3 +581,46 @@ class VomsTokenService(test_auth.AuthTest):
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertNotIn("role1", roles)
         self.assertNotIn("role2", roles)
+
+    def test_user_tenants_filter_by_vo(self):
+        """Verify that multiple tenants are filtered out."""
+        CONF.voms.voms_policy = "voms_multiple_vos.json"
+        # first request with dteam proxy
+        req_dteam = prepare_request(get_auth_body(),
+                                    valid_cert,
+                                    valid_cert_chain)
+        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req_dteam)
+        params = req_dteam.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req_dteam.environ,
+                                                    params["auth"])
+        tenant_controller = controllers.Tenant()
+        fake_context = {
+            "token_id": remote_token["access"]["token"]["id"],
+            "query_string": {"limit": None},
+        }
+        tenants = tenant_controller.get_projects_for_token(fake_context)
+        dteam_tenants = aux._filter_tenants(tenants["tenants"])
+        self.assertEqual(self.tenant_name, dteam_tenants[0]["name"])
+        # repeat with other VO
+        req_ops = prepare_request(get_auth_body(),
+                                  valid_cert_ops,
+                                  valid_cert_chain)
+        aux._process_request(req_ops)
+        params = req_dteam.environ[middleware.PARAMS_ENV]
+        remote_token = self.controller.authenticate(req_dteam.environ,
+                                                    params["auth"])
+        tenant_controller = controllers.Tenant()
+        fake_context = {
+            "token_id": remote_token["access"]["token"]["id"],
+            "query_string": {"limit": None},
+        }
+        tenants = tenant_controller.get_projects_for_token(fake_context)
+        # user should be now in two tenants
+        self.assertEqual(2, len(tenants["tenants"]))
+        ops_tenants = aux._filter_tenants(tenants["tenants"])
+        # check that is correctly filtered out
+        self.assertEqual(1, len(ops_tenants))
+        self.assertEqual(self.aux_tenant_name, ops_tenants[0]["name"])
+
