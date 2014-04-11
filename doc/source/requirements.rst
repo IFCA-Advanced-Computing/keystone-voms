@@ -57,6 +57,7 @@ or create a new configuration file for your keystone installation
 for the http server (``SSLCertificateKeyFile`` and ``SSLCACertificatePath``)::
 
     Listen 5000
+    WSGIDaemonProcess keystone user=keystone group=nogroup processes=8 threads=1
     <VirtualHost _default_:5000>
         LogLevel     warn
         ErrorLog    ${APACHE_LOG_DIR}/error.log
@@ -73,12 +74,12 @@ for the http server (``SSLCertificateKeyFile`` and ``SSLCACertificatePath``)::
         SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
         SSLOptions              +StdEnvVars +ExportCertData
 
-        WSGIDaemonProcess keystone user=keystone group=nogroup processes=8 threads=1
         WSGIScriptAlias /  /usr/lib/cgi-bin/keystone/main
         WSGIProcessGroup keystone
     </VirtualHost>
 
     Listen 35357
+    WSGIDaemonProcess   keystoneapi user=keystone group=nogroup processes=8 threads=1
     <VirtualHost _default_:35357>
         LogLevel    warn
         ErrorLog    ${APACHE_LOG_DIR}/error.log
@@ -95,7 +96,6 @@ for the http server (``SSLCertificateKeyFile`` and ``SSLCACertificatePath``)::
         SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
         SSLOptions              +StdEnvVars +ExportCertData
 
-        WSGIDaemonProcess   keystoneapi user=keystone group=nogroup processes=8 threads=1
         WSGIScriptAlias     / /usr/lib/cgi-bin/keystone/admin
         WSGIProcessGroup    keystoneapi
     </VirtualHost>
