@@ -227,8 +227,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         tenant_name = voinfo.get("tenant", "")
 
         try:
-            tenant_ref = self.identity_api.get_project_by_name(tenant_name,
-                                                               self.domain)
+            tenant_ref = self.assignment_api.get_project_by_name(tenant_name,
+                                                                 self.domain)
         except exception.ProjectNotFound:
             LOG.warning(_("VO mapping not properly configured for '%s'") %
                         user_vo)
