@@ -340,8 +340,4 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 #        params["auth"]["tenantName"] = tenant
 
     def process_request(self, request):
-        # NOTE(aloga): This should be removed for Havana
-        try:
-            return self._process_request(request)
-        except Exception as e:
-            return wsgi.render_exception(e)
+        return self._process_request(request)
