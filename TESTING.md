@@ -2,7 +2,7 @@
 
 First, get the keystone code, and create the virtualenv::
 
-    git clone https://github.com/openstack/keystone/ -b stable/havana /tmp/keystone/
+    git clone https://github.com/openstack/keystone/ -b stable/icehouse /tmp/keystone/
     virtualenv /tmp/keystone/.venv/
     source /tmp/keystone/.venv/bin/activate
     pip install -r /tmp/keystone/requirements.txt

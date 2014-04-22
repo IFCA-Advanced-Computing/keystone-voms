@@ -6,7 +6,7 @@ installed. Moreover, it requires that you run Keystone as a WSGI application beh
 an HTTP server (Apache will be used in this documentation, but any webserver
 could make it).
 
-* Keystone >= Havana.
+* Keystone Icehouse.
 * EUgridPMA CA certificates at the latest version.
 * fetch-crl package.
 * VOMS libraries.
@@ -105,7 +105,7 @@ without a VOMS proxy can authenticate using their Keystone credentials.
 
 To run Keystone as a WSGI applicantion you must create a WSGI script as the one
 already included in the  `Github Keystone repository
-<https://github.com/openstack/keystone/blob/stable/havana/httpd/keystone.py>`_.
+<https://github.com/openstack/keystone/blob/stable/icehouse/httpd/keystone.py>`_.
 Copy this script to ``/usr/lib/cgi-bin/keystone/keystone.py`` and create the
 following links::
 

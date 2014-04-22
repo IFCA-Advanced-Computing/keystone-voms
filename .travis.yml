@@ -5,7 +5,7 @@ python:
 install: 
     - sudo apt-get update
     - sudo apt-get install -y swig libvomsapi1
-    - git clone https://github.com/openstack/keystone/ -b stable/havana /tmp/keystone/
+    - git clone https://github.com/openstack/keystone/ -b stable/icehouse /tmp/keystone/
     - pip install -r /tmp/keystone/requirements.txt
     - pip install -r /tmp/keystone/test-requirements.txt
     - pip install -r requirements.txt

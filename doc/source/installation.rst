@@ -1,7 +1,7 @@
 VOMS module Installation
 ========================
 
-This module assumes that keystone is at least running the Havana version.
+This module assumes that keystone is at least running the Icehouse.
 If you are using the Grizzly version, please check the `Grizzly Documentation
 <http://keystone-voms.readthedocs.org/en/stable-grizzly/>`_.
 
@@ -21,7 +21,7 @@ First, uninstall any other `keystone-voms` installation::
 
     sudo pip uninstall keystone-voms
 
-With a running Havana installation, simply install this egg. In the upper-level
+With a running Icehouse, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
     git clone git://github.com/IFCA/keystone-voms.git -b stable/havana
@@ -34,7 +34,7 @@ Enable the Keystone VOMS module
 The authentication module is a WSGI middleware that performs the authentication
 and passes the authenticated user down to keystone. Add the VOMS filter to your
 paste configuration file ``/etc/keystone/keystone-paste.ini`` (note that in
-Havana the paste configuration has been moved to a separate configuration file
+Icehouse paste configuration has been moved to a separate configuration file
 and it is not anymore in the same file as the Keystone configuration). First,
 add the VOMS filter as follows::
 
