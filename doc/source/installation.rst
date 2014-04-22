@@ -11,21 +11,22 @@ Install the Keystone VOMS module
 Install from PPA
 ~~~~~~~~~~~~~~~~
 
-You can install the latest version from a private PPA::
-
-   sudo add-apt-repository ppa:aloga/keystone-voms
-   sudo aptitude update
-   sudo aptitude install python-keystone-voms
+This option is no longer supported. Please install it from the source as stated
+below.
 
 Install from source
 ~~~~~~~~~~~~~~~~~~~
+
+First, uninstall any other `keystone-voms` installation::
+
+    sudo pip uninstall keystone-voms
 
 With a running Havana installation, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
     git clone git://github.com/IFCA/keystone-voms.git -b stable/havana
     cd keystone-voms
-    sudo python setup.py install
+    sudo pip install .
 
 Enable the Keystone VOMS module
 -------------------------------
@@ -45,7 +46,7 @@ API. Probably, you should add it before the ``debug``, ``ec2_extension``,
 ``user_crud_extension`` and ``public_service`` components::
 
     [pipeline:public_api]
-    pipeline = access_log sizelimit url_normalize token_auth admin_token_auth xml_body json_body ldap_ro_ifca ldap_ro_lip voms debug ec2_extension user_crud_extension public_service
+    pipeline = access_log sizelimit url_normalize token_auth admin_token_auth xml_body json_body voms debug ec2_extension user_crud_extension public_service
 
 
 Note that you may have a different pipeline. You don't need to replace your
