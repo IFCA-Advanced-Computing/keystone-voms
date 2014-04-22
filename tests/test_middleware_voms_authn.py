@@ -143,12 +143,12 @@ def prepare_request(body=None, cert=None, chain=None):
 class MiddlewareVomsAuthn(tests.TestCase):
     def setUp(self):
         super(MiddlewareVomsAuthn, self).setUp()
-        self.config([tests.etcdir('keystone.conf.sample'),
-                     tests.testsdir('test_overrides.conf'),
-                     tests.testsdir('keystone_voms.conf')])
+        self.config([tests.dirs.etc('keystone.conf.sample'),
+                     tests.dirs.tests_conf('keystone_voms.conf')])
         self.load_backends()
         self.load_fixtures(default_fixtures)
         self.tenant_name = default_fixtures.TENANTS[0]['name']
+        CONF.voms.voms_policy = tests.dirs.tests_conf("voms.json")
 
     def test_middleware_proxy_unscoped(self):
         """Verify unscoped request."""
@@ -188,7 +188,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_tenant_not_found(self):
         """Verify that mapping to a non existing tenant raises exception."""
-        CONF.voms.voms_policy = "voms_no_tenant.json"
+        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_tenant.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -201,7 +201,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_vo_not_found(self):
         """Verify that no VO-tenant mapping raises exception."""
-        CONF.voms.voms_policy = "voms_no_vo.json"
+        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -214,7 +214,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_vo_not_found_unscoped(self):
         """Verify that no VO-tenant mapping raises exception."""
-        CONF.voms.voms_policy = "voms_no_vo.json"
+        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -370,11 +370,11 @@ class MiddlewareVomsAuthn(tests.TestCase):
 class VomsTokenService(test_auth.AuthTest):
     def setUp(self):
         super(VomsTokenService, self).setUp()
-        self.config([tests.etcdir('keystone.conf.sample'),
-                     tests.testsdir('test_overrides.conf'),
-                     tests.testsdir('keystone_voms.conf')])
+        self.config([tests.dirs.etc('keystone.conf.sample'),
+                     tests.dirs.tests_conf('keystone_voms.conf')])
         self.tenant_name = default_fixtures.TENANTS[0]['name']
         self.tenant_id = default_fixtures.TENANTS[0]['id']
+        CONF.voms.voms_policy = tests.dirs.tests_conf("voms.json")
 
     def test_unscoped_remote_authn(self):
         """Verify unscoped request."""
@@ -385,7 +385,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ,
+        context = {"environment": req.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
         self.assertEqual(user_dn, remote_token["access"]["user"]["username"])
         self.assertNotIn("tenant", remote_token["access"])
@@ -413,7 +414,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ,
+        context = {"environment": req.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
 
         tenant_controller = controllers.Tenant()
@@ -436,7 +438,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ,
+        context = {"environment": req.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
         self.assertEqual(user_dn,
                          remote_token["access"]["user"]["username"])
@@ -454,7 +457,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ,
+        context = {"environment": req.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertIn("role1", roles)
@@ -479,7 +483,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ,
+        context = {"environment": req.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertIn("role1", roles)
@@ -512,7 +517,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ,
+        context = {"environment": req.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertIn("role1", roles)
@@ -529,7 +535,8 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req.environ,
+        context = {"environment": req.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertNotIn("role1", roles)

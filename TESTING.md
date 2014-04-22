@@ -19,7 +19,8 @@ virtualenv created in the step above::
 
 Copy the tests and run them::
 
-    cp tests/* /tmp/keystone/keystone/tests
+    cp tests/*py /tmp/keystone/keystone/tests
+    cp tests/config_files/* /tmp/keystone/keystone/tests/config_files
     cd /tmp/keystone/
     nosetests keystone.tests.test_middleware_voms_authn
 
