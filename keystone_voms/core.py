@@ -23,6 +23,7 @@ from keystone.common import wsgi
 from keystone import exception
 from keystone import identity, assignment
 import keystone.middleware
+from keystone.openstack.common.gettextutils import _
 from keystone.openstack.common import jsonutils
 from keystone.openstack.common import log
 
