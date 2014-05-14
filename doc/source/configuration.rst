@@ -52,7 +52,9 @@ second server needs to be present as well::
     /C=GR/O=HellasGrid/OU=Certification Authorities/CN=HellasGrid CA 2006
 
 For more details, please check the following page `How to configure VOMS LSC
-files <https://twiki.cern.ch/twiki/bin/view/LCG/VOMSLSCfileConfiguration#LSC_file_configuration_by_other>`_.
+files <http://italiangrid.github.io/voms/documentation/voms-clients-guide/3.0.3/#voms-trust>`_.
+Note that you do not need to install the ``.pem`` certificate, just the ``.lsc``
+file.
 
 VO to local tenant mapping
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
