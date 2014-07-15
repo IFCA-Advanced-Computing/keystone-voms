@@ -150,6 +150,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         chain = M2Crypto.X509.X509_Stack()
         for c in ssl_info.get("chain", []):
             aux = M2Crypto.X509.load_cert_string(c)
+            if aux.check_ca():
+                continue # Don't include CA certs
             chain.push(aux)
         return cert, chain
 
