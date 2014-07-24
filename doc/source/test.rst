@@ -10,10 +10,11 @@ First get a valid VOMS proxy::
 
     $ voms-proxy-init -voms <VOMS> -rfc
 
-Then, get a unscoped token::
+Then, get a unscoped token from the keystone server::
 
     $ curl --cert $X509_USER_PROXY  -d '{"auth":{"voms": true}}' \
-    -H "Content-type: application/json" https://<keystone_host>/v2.0/tokens
+    -H "Content-type: application/json" \
+    https://<keystone_host>:5000/v2.0/tokens
 
 This will give you something like::
 
@@ -31,7 +32,7 @@ Use the token ID that you obtained, to get a list of the tenants that you are
 allowed to access::
 
      $ curl -H "X-Auth-Token:0eed0ced-4667-4221-a0b2-24c91f242b0b" \
-     http://localhost:35357/v2.0/tenants
+     http://<keystone_host>:5000/v2.0/tenants
 
 If this is sucessful, you should get something like::
 
@@ -51,7 +52,8 @@ Identify the tenant, and request a scoped token::
 
     $ curl --cert $X509_USER_PROXY  \
     -d '{"auth":{"voms": true, "tenantName": "TenantName"}}' \
-    -H "Content-type: application/json" https://<keystone_host>/v2.0/tokens
+    -H "Content-type: application/json" \
+    https://<keystone_host>:5000/v2.0/tokens
 
 Finally, you should obtain your token::
 
