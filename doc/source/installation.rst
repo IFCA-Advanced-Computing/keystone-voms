@@ -14,6 +14,14 @@ Install from PPA
 This option is no longer supported. Please install it from the source as stated
 below.
 
+Install from pip
+~~~~~~~~~~~~~~~~
+
+With a running Keystone Icehouse you can install the VOMS module with the
+following command (note the version range)::
+
+    pip install 'python-keystone-voms>=2014.1,<2014.2'
+
 Install from source
 ~~~~~~~~~~~~~~~~~~~
 
@@ -21,7 +29,7 @@ First, uninstall any other `keystone-voms` installation::
 
     sudo pip uninstall keystone-voms
 
-With a running Icehouse, simply install this egg. In the upper-level
+With a running Keystone Icehouse, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
     git clone git://github.com/IFCA/keystone-voms.git -b stable/icehouse
