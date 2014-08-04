@@ -10,13 +10,14 @@ Keystone native mechanisms.
 
 This documentation is based on an Icehouse installation.
 
+* Only V2 authentication is supported in Icehouse so far.
 * If you are using the Grizzly version, please check the `Grizzly
   Documentation <http://keystone-voms.readthedocs.org/en/stable-grizzly/>`_.
   Note that Grizzly does not support usernames longer that 64 characters
   (`Bug #1081932 <https://bugs.launchpad.net/keystone/+bug/1081932>`_.
 * If you are using the Havana version, please check the `Havana
   Documentation <http://keystone-voms.readthedocs.org/en/stable-havana/>`_.
-  Note that only support in Havana is onlyy for V2 authentication.
+  Note that support in Havana is only for V2 authentication.
 
 User documentation
 ==================

@@ -7,7 +7,7 @@ In order to facilitate the usage of the VOMS authentication with an
 OpenStack installation an `authentication plugin for the nova client
 <https://github.com/IFCA/voms-auth-system-openstack>`_ has been created. Please
 follow its `instructions
-<https://github.com/IFCA/voms-auth-system-openstack/blob/stable/havana/README.rst>`_
+<https://github.com/IFCA/voms-auth-system-openstack/blob/stable/icehouse/README.rst>`_
 in order to use it.
 
 Manual Usage

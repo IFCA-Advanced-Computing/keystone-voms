@@ -24,7 +24,7 @@ First, uninstall any other `keystone-voms` installation::
 With a running Icehouse, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
-    git clone git://github.com/IFCA/keystone-voms.git -b stable/havana
+    git clone git://github.com/IFCA/keystone-voms.git -b stable/icehouse
     cd keystone-voms
     sudo pip install .
 
