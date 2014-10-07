@@ -12,6 +12,14 @@ keystone_voms.core module
     :undoc-members:
     :show-inheritance:
 
+keystone_voms.version module
+----------------------------
+
+.. automodule:: keystone_voms.version
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 keystone_voms.voms_helper module
 --------------------------------
 
