@@ -18,13 +18,14 @@ import M2Crypto
 from oslo.config import cfg
 
 from keystone.common import wsgi
-from keystone import exception
+from keystone import exception as ks_exc
 from keystone import identity, assignment
 import keystone.middleware
 from keystone.openstack.common.gettextutils import _
 from keystone.openstack.common import jsonutils
 from keystone.openstack.common import log
 
+from keystone_voms import exception
 from keystone_voms import voms_helper
 
 LOG = log.getLogger(__name__)
@@ -67,51 +68,6 @@ SSL_CLIENT_CERT_ENV = "SSL_CLIENT_CERT"
 SSL_CLIENT_CERT_CHAIN_ENV_PREFIX = "SSL_CLIENT_CERT_CHAIN_"
 
 
-class VomsError(exception.Error):
-    """Voms credential management error"""
-
-    errors = {
-        0: ('none', None),
-        1: ('nosocket', 'Socket problem'),
-        2: ('noident', 'Cannot identify itself (certificate problem)'),
-        3: ('comm', 'Server problem'),
-        4: ('param', 'Wrong parameters'),
-        5: ('noext', 'VOMS extension missing'),
-        6: ('noinit', 'Initialization error'),
-        7: ('time', 'Error in time checking'),
-        8: ('idcheck', 'User data in extension different from the real'),
-        9: ('extrainfo', 'VO name and URI missing'),
-        10: ('format', 'Wrong data format'),
-        11: ('nodata', 'Empty extension'),
-        12: ('parse', 'Parse error'),
-        13: ('dir', 'Directory error'),
-        14: ('sign', 'Signature error'),
-        15: ('server', 'Unidentifiable VOMS server'),
-        16: ('mem', 'Memory problems'),
-        17: ('verify', 'Generic verification error'),
-        18: ('type', 'Returned data of unknown type'),
-        19: ('order', 'Ordering different than required'),
-        20: ('servercode', 'Error from the server'),
-        21: ('notavail', 'Method not available'),
-    }
-
-    http_codes = {
-        5: (400, "Bad Request"),
-        11: (400, "Bad Request"),
-        14: (401, "Not Authorized"),
-    }
-
-    def __init__(self, code):
-        short, message = self.errors.get(code, ('oops',
-                                                'Unknown error %d' % code))
-        message = "(%s, %s)" % (code, message)
-        super(VomsError, self).__init__(message=message)
-
-        code, title = self.http_codes.get(code, (500, "Unexpected Error"))
-        self.code = code
-        self.title = title
-
-
 class VomsAuthNMiddleware(wsgi.Middleware):
     """Filter that checks for the SSL data in the reqest.
 
@@ -126,11 +82,11 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             self.voms_json = jsonutils.loads(
                 open(CONF.voms.voms_policy).read())
         except ValueError:
-            raise exception.UnexpectedError("Bad formatted VOMS json data "
-                                            "from %s" % CONF.voms.voms_policy)
+            raise ks_exc.UnexpectedError("Bad formatted VOMS json data "
+                                         "from %s" % CONF.voms.voms_policy)
         except:
-            raise exception.UnexpectedError("Could not load VOMS json file "
-                                            "%s" % CONF.voms.voms_policy)
+            raise ks_exc.UnexpectedError("Could not load VOMS json file "
+                                         "%s" % CONF.voms.voms_policy)
 
         self.VOMSDIR = CONF.voms.vomsdir_path
         self.CADIR = CONF.voms.ca_path
@@ -159,7 +115,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         try:
             cert, chain = self._get_cert_chain(ssl_info)
         except M2Crypto.X509.X509Error:
-            raise exception.ValidationError(
+            raise ks_exc.ValidationError(
                 attribute="SSL data",
                 target=CONTEXT_ENV)
 
@@ -170,7 +126,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             voms_data = v.retrieve(cert, chain)
             if not voms_data:
                 # TODO(aloga): move this to a keystone exception
-                raise VomsError(v.error.value)
+                raise exception.VomsError(v.error.value)
 
             d = {}
             for attr in ('user', 'userca', 'server', 'serverca',
@@ -209,8 +165,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             if auth["voms"] is True:
                 return True
             else:
-                raise exception.ValidationError("Error in JSON, 'voms' "
-                                                "must be set to true")
+                raise ks_exc.ValidationError("Error in JSON, 'voms' "
+                                             "must be set to true")
         return False
 
     def _get_project_from_voms(self, voms_info):
@@ -229,10 +185,10 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         try:
             tenant_ref = self.assignment_api.get_project_by_name(tenant_name,
                                                                  self.domain)
-        except exception.ProjectNotFound:
+        except ks_exc.ProjectNotFound:
             LOG.warning(_("VO mapping not properly configured for '%s'") %
                         user_vo)
-            raise exception.Unauthorized("Your VO is not authorized")
+            raise ks_exc.Unauthorized("Your VO is not authorized")
 
         return tenant_ref
 
@@ -290,7 +246,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         try:
             user_ref = self.identity_api.get_user_by_name(user_dn,
                                                           self.domain)
-        except exception.UserNotFound:
+        except ks_exc.UserNotFound:
             if CONF.voms.autocreate_users:
                 user_ref = self._create_user(user_dn)
             else:
@@ -300,7 +256,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         tenant = self._get_project_from_voms(voms_info)
         # If the user is requesting a wrong tenant, stop
         if req_tenant and req_tenant != tenant["name"]:
-            raise exception.Unauthorized
+            raise ks_exc.Unauthorized
 
         if CONF.voms.autocreate_users:
             tenants = self.identity_api.list_projects_for_user(user_ref["id"])
