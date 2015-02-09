@@ -35,7 +35,7 @@ Install from pip
 With a running Keystone Icehouse you can install the VOMS module with the
 following command (note the version range)::
 
-    pip install 'python-keystone-voms>=2014.1,<2014.2'
+    pip install 'keystone-voms>=2014.1,<2014.2'
 
 Install from source
 ~~~~~~~~~~~~~~~~~~~
