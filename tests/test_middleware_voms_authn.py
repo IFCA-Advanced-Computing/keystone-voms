@@ -15,7 +15,7 @@
 import uuid
 
 from keystone import config
-from keystone import exception
+from keystone import exception as ks_exc
 from keystone.identity import controllers
 from keystone import middleware
 from keystone import tests
@@ -23,7 +23,8 @@ from keystone.tests import default_fixtures
 from keystone.tests import test_auth
 from keystone.tests.test_middleware import make_request
 
-import keystone_voms
+import keystone_voms.core as ks_voms
+from  keystone_voms import exception
 
 
 CONF = config.CONF
@@ -131,9 +132,9 @@ def prepare_request(body=None, cert=None, chain=None):
     if body:
         req.environ[middleware.PARAMS_ENV] = body
     if cert:
-        req.environ[keystone_voms.SSL_CLIENT_CERT_ENV] = cert
+        req.environ[ks_voms.SSL_CLIENT_CERT_ENV] = cert
     if chain:
-        req.environ[keystone_voms.SSL_CLIENT_CERT_CHAIN_ENV_PREFIX +
+        req.environ[ks_voms.SSL_CLIENT_CERT_CHAIN_ENV_PREFIX +
                     "0"] = chain
     return req
 
@@ -153,7 +154,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -166,7 +167,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -177,49 +178,49 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=uuid.uuid4().hex),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
-            exception.Unauthorized,
+            ks_exc.Unauthorized,
             aux._process_request,
             req)
 
     def test_middleware_proxy_tenant_not_found(self):
-        """Verify that mapping to a non existing tenant raises exception."""
+        """Verify that mapping to a non existing tenant raises ks_exc."""
         CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_tenant.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
-            exception.Unauthorized,
+            ks_exc.Unauthorized,
             aux._process_request,
             req)
 
     def test_middleware_proxy_vo_not_found(self):
-        """Verify that no VO-tenant mapping raises exception."""
+        """Verify that no VO-tenant mapping raises ks_exc."""
         CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
-            exception.Unauthorized,
+            ks_exc.Unauthorized,
             aux._process_request,
             req)
 
     def test_middleware_proxy_vo_not_found_unscoped(self):
-        """Verify that no VO-tenant mapping raises exception."""
+        """Verify that no VO-tenant mapping raises ks_exc."""
         CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
-            exception.Unauthorized,
+            ks_exc.Unauthorized,
             aux._process_request,
             req)
 
@@ -229,7 +230,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -242,7 +243,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
                               valid_cert,
                               valid_cert_chain)
 
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -261,7 +262,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -273,7 +274,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -283,7 +284,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -295,10 +296,10 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
-            exception.UserNotFound,
+            ks_exc.UserNotFound,
             aux._process_request,
             req)
 
@@ -308,60 +309,60 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
-            exception.UserNotFound,
+            ks_exc.UserNotFound,
             aux._process_request,
             req)
 
     def test_middleware_proxy_unknown(self):
-        """Verify that an unknown proxy raises exception."""
+        """Verify that an unknown proxy raises ks_exc."""
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
         self.assertRaises(
-            keystone_voms.VomsError,
-            keystone_voms.VomsAuthNMiddleware(None)._process_request,
+            exception.VomsError,
+            ks_voms.VomsAuthNMiddleware(None)._process_request,
             req)
 
     def test_middleware_no_proxy(self):
-        """Verify that no proxy raises exception."""
+        """Verify that no proxy raises ks_exc."""
         req = prepare_request()
         req.environ[middleware.PARAMS_ENV] = get_auth_body()
         self.assertRaises(
-            exception.ValidationError,
-            keystone_voms.VomsAuthNMiddleware(None)._process_request,
+            ks_exc.ValidationError,
+            ks_voms.VomsAuthNMiddleware(None)._process_request,
             req)
 
     def test_middleware_incorrect_json(self):
-        """Verify that bad JSON raises exception."""
+        """Verify that bad JSON raises ks_exc."""
         req = prepare_request()
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": "True"}}
         self.assertRaises(
-            exception.ValidationError,
-            keystone_voms.VomsAuthNMiddleware(None)._process_request,
+            ks_exc.ValidationError,
+            ks_voms.VomsAuthNMiddleware(None)._process_request,
             req)
 
     def test_middleware_no_params(self):
         """Verify that empty request returns none."""
         req = prepare_request()
-        ret = keystone_voms.VomsAuthNMiddleware(None)._process_request(req)
+        ret = ks_voms.VomsAuthNMiddleware(None)._process_request(req)
         self.assertEqual(ret, None)
 
     def test_middleware_remote_user_set(self):
         """Verify that if REMOTE_USER already set we skip the auth."""
         req = prepare_request()
         req.environ["REMOTE_USER"] = "Fake"
-        ret = keystone_voms.VomsAuthNMiddleware(None)._process_request(req)
+        ret = ks_voms.VomsAuthNMiddleware(None)._process_request(req)
         self.assertEqual(ret, None)
 
     def test_no_json_data(self):
-        """Verify that no JSON data raises exception."""
+        """Verify that no JSON data raises ks_exc."""
         CONF.voms.voms_policy = None
         self.assertRaises(
-            exception.UnexpectedError,
-            keystone_voms.VomsAuthNMiddleware,
+            ks_exc.UnexpectedError,
+            ks_voms.VomsAuthNMiddleware,
             None)
 
 
@@ -379,7 +380,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -408,7 +409,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -432,7 +433,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -451,7 +452,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -477,7 +478,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -511,7 +512,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -529,7 +530,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = keystone_voms.VomsAuthNMiddleware(None)
+        aux = ks_voms.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]

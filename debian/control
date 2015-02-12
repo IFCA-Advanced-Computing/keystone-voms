@@ -1,11 +1,14 @@
 Source: python-keystone-voms
-Section: python
+Section: net
 Priority: extra
 Maintainer: Alvaro Lopez Garcia <aloga@ifca.unican.es>
 Homepage: http://ifca.github.io/keystone-voms
-Build-Depends: debhelper (>= 7.0.50),
+Build-Depends: 
+ debhelper (>= 7.0.50),
  python-all (>= 2.6),
- python-all-dev (>= 2.6.6-3~) | python-support,
+ python-all-dev (>= 2.6.6-3~)
+Build-Depends-Indep:
+ python-pbr (>= 0.6),
  python-setuptools,
  python-sphinx
 Standards-Version: 3.9.3
@@ -17,8 +20,10 @@ Section: python
 Depends: ${python:Depends}, ${misc:Depends},
  libvomsapi1,
  python-m2crypto,
- python-keystone (>= 1:2013.1),
- keystone (>= 1:2013.1)
+ python-keystone (>= 1:2014.1),
+ python-keystone (<< 1:2014.2),
+ keystone (>= 1:2014.1), 
+ keystone (<< 1:2014.2)
 Suggests: voms-clients
 Provides: ${python:Provides}
 XS-Python-Version: ${python:Versions}
