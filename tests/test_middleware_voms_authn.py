@@ -16,12 +16,13 @@ import uuid
 
 from keystone import config
 from keystone import exception as ks_exc
-from keystone.identity import controllers
+from keystone.assignment import controllers
 from keystone import middleware
 from keystone import tests
 from keystone.tests import default_fixtures
+from keystone.tests.ksfixtures import database
 from keystone.tests import test_auth
-from keystone.tests.test_middleware import make_request
+from keystone.tests import test_middleware
 
 import keystone_voms.core as ks_voms
 from  keystone_voms import exception
@@ -128,7 +129,7 @@ def get_auth_body(tenant=None):
 
 
 def prepare_request(body=None, cert=None, chain=None):
-    req = make_request()
+    req = test_middleware.make_request()
     if body:
         req.environ[middleware.PARAMS_ENV] = body
     if cert:
@@ -144,6 +145,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         super(MiddlewareVomsAuthn, self).setUp()
         self.config([tests.dirs.etc('keystone.conf.sample'),
                      tests.dirs.tests_conf('keystone_voms.conf')])
+        self.useFixture(database.Database())
         self.load_backends()
         self.load_fixtures(default_fixtures)
         self.tenant_name = default_fixtures.TENANTS[0]['name']
@@ -348,14 +350,14 @@ class MiddlewareVomsAuthn(tests.TestCase):
         """Verify that empty request returns none."""
         req = prepare_request()
         ret = ks_voms.VomsAuthNMiddleware(None)._process_request(req)
-        self.assertEqual(ret, None)
+        self.assertIsNone(ret)
 
     def test_middleware_remote_user_set(self):
         """Verify that if REMOTE_USER already set we skip the auth."""
         req = prepare_request()
         req.environ["REMOTE_USER"] = "Fake"
         ret = ks_voms.VomsAuthNMiddleware(None)._process_request(req)
-        self.assertEqual(ret, None)
+        self.assertIsNone(ret)
 
     def test_no_json_data(self):
         """Verify that no JSON data raises ks_exc."""
@@ -393,9 +395,7 @@ class VomsTokenService(test_auth.AuthTest):
     def test_unscoped_remote_authn_existing_user_in_tenant(self):
         """Verify unscoped request for existing user, already in a tenant."""
 
-        user_id = uuid.uuid4().hex
         user = {
-            "id": user_id,
             "name": user_dn,
             "enabled": True,
             "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
@@ -403,9 +403,9 @@ class VomsTokenService(test_auth.AuthTest):
         tenant_id = default_fixtures.TENANTS[-1]["id"]
 
         # Create the user
-        self.identity_api.create_user(user_id, user)
+        user = self.identity_api.create_user(user)
         # Add the user to tenant different than the mapped one
-        self.identity_api.add_user_to_project(tenant_id, user_id)
+        self.assignment_api.add_user_to_project(tenant_id, user["id"])
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
@@ -467,14 +467,12 @@ class VomsTokenService(test_auth.AuthTest):
         """Verify roles are updated for existing user."""
         CONF.voms.add_roles = True
         CONF.voms.user_roles = ["role1", "role2"]
-        user_id = uuid.uuid4().hex
         user = {
-            "id": user_id,
             "name": user_dn,
             "enabled": True,
             "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
         }
-        self.identity_api.create_user(user_id, user)
+        self.identity_api.create_user(user)
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -493,20 +491,18 @@ class VomsTokenService(test_auth.AuthTest):
         """Verify roles are not re-added to existing user."""
         CONF.voms.add_roles = True
         CONF.voms.user_roles = ["role1", "role2"]
-        user_id = uuid.uuid4().hex
         user = {
-            "id": user_id,
             "name": user_dn,
             "enabled": True,
             "domain_id": default_fixtures.DEFAULT_DOMAIN_ID,
         }
         # Create the user and add to tenant
-        self.identity_api.create_user(user_id, user)
-        self.identity_api.add_user_to_project(self.tenant_id, user_id)
+        user = self.identity_api.create_user(user)
+        self.assignment_api.add_user_to_project(self.tenant_id, user["id"])
         # create roles and add them to user
         for r in CONF.voms.user_roles:
             self.assignment_api.create_role(r, {'id': r, 'name': r})
-            self.assignment_api.add_role_to_user_and_project(user_id,
+            self.assignment_api.add_role_to_user_and_project(user["id"],
                                                              self.tenant_id,
                                                              r)
         req = prepare_request(get_auth_body(tenant=self.tenant_name),

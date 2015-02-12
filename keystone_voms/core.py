@@ -193,23 +193,19 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         return tenant_ref
 
     def _create_user(self, user_dn):
-        user_id = uuid.uuid4().hex
-        LOG.info(_("Autocreating REMOTE_USER %s with id %s") %
-                 (user_id, user_dn))
+        LOG.info(_("Autocreating REMOTE_USER %s") % user_dn)
         # TODO(aloga): add backend information in user referece?
         user = {
-            "id": user_id,
             "name": user_dn,
             "enabled": True,
             "domain_id": self.domain,
         }
-        self.identity_api.create_user(user_id, user)
-        return user
+        return self.identity_api.create_user(user)
 
     def _add_user_to_tenant(self, user_id, tenant_id):
         LOG.info(_("Automatically adding user %s to tenant %s") %
                  (user_id, tenant_id))
-        self.identity_api.add_user_to_project(tenant_id, user_id)
+        self.assignment_api.add_user_to_project(tenant_id, user_id)
 
     def _search_role(self, r_name):
         for role in self.assignment_api.list_roles():
@@ -259,7 +255,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             raise ks_exc.Unauthorized
 
         if CONF.voms.autocreate_users:
-            tenants = self.identity_api.list_projects_for_user(user_ref["id"])
+            tenants = self.assignment_api.list_projects_for_user(
+                user_ref["id"])
 
             if tenant not in tenants:
                 self._add_user_to_tenant(user_ref['id'], tenant['id'])
