@@ -21,7 +21,7 @@ installed. Moreover, it requires that you run Keystone as a WSGI application beh
 an HTTP server (Apache will be used in this documentation, but any webserver
 could make it).
 
-* Keystone Icehouse.
+* Keystone Juno.
 * EUgridPMA CA certificates at the latest version.
 * fetch-crl package.
 * VOMS libraries.
