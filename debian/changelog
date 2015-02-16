@@ -1,3 +1,13 @@
+python-keystone-voms (2014.2-1) stable; urgency=medium
+
+  [ Enol Fernandez ]
+  * [d46fa83] Update code for stable/juno.
+
+  [ Alvaro Lopez Garcia ]
+  * [3d012f7] Update documentation to Juno
+
+ -- Alvaro Lopez Garcia <aloga@ifca.unican.es>  Mon, 16 Feb 2015 14:00:14 +0100
+
 python-keystone-voms (2014.1.4-1) stable; urgency=medium
 
   * [ea180c6] code reorganization
