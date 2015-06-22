@@ -17,29 +17,26 @@
 Openstack Keystone VOMS module
 ==============================
 
-This module is intended to provide VOMS authentication to a Grizzly
+This module is intended to provide VOMS authentication to an
 OpenStack Keystone. It is designed to be integrated as an external
 authentication plugin, so that Keystone will preserve its original
 features and users will still be able to authenticate using any of the
 Keystone native mechanisms.
 
-This documentation is based on a Keystone 2014.2 (Juno) installation.
+This documentation is based on a Keystone 2015.1 (Kilo) installation.
 
 .. attention::
     If you are upgrading from any priorversion, check the
     :doc:`Upgrade nodes <upgrade>` before proceeding.
 
 * Only V2 authentication is supported in Juno so far.
-* If you are using the 2013.1 (Grizzly) version, please check the `Grizzly
-  Documentation <http://keystone-voms.readthedocs.org/en/stable-grizzly/>`_.
-  Note that Grizzly does not support usernames longer that 64 characters
-  (`Bug #1081932 <https://bugs.launchpad.net/keystone/+bug/1081932>`_).
-* If you are using the 2013.2 (Havana) version, please check the `Havana
-  Documentation <http://keystone-voms.readthedocs.org/en/stable-havana/>`_.
-  Note that support in Havana is only for V2 authentication.
 * If you are using the 2014.1 (Icehouse) version, please check the `Icehouse
   Documentation <http://keystone-voms.readthedocs.org/en/stable-icehouse/>`_.
   Note that support in Icehouse is only for V2 authentication.
+* If you are using the 2014.2 (Juno) version, please check the `Juno
+  Documentation <http://keystone-voms.readthedocs.org/en/stable-juno/>`_.
+  Note that support in Icehouse is only for V2 authentication.
+
 
 User documentation
 ==================
