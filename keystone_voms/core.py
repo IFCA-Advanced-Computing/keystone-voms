@@ -16,14 +16,14 @@ import uuid
 
 import M2Crypto
 from oslo.config import cfg
+from oslo_log import log
+from oslo_serialization import jsonutils
 
+from keystone.common import dependency
 from keystone.common import wsgi
 from keystone import exception as ks_exc
-from keystone import identity, assignment
+from keystone.i18n import _
 import keystone.middleware
-from keystone.openstack.common.gettextutils import _
-from keystone.openstack.common import jsonutils
-from keystone.openstack.common import log
 
 from keystone_voms import exception
 from keystone_voms import voms_helper
@@ -68,15 +68,14 @@ SSL_CLIENT_CERT_ENV = "SSL_CLIENT_CERT"
 SSL_CLIENT_CERT_CHAIN_ENV_PREFIX = "SSL_CLIENT_CERT_CHAIN_"
 
 
+@dependency.requires('identity_api', 'assignment_api', 'resource_api',
+                     'role_api')
 class VomsAuthNMiddleware(wsgi.Middleware):
     """Filter that checks for the SSL data in the reqest.
 
     Sets 'ssl' in the context as a dictionary containing this data.
     """
     def __init__(self, *args, **kwargs):
-        self.identity_api = identity.Manager()
-        self.assignment_api = assignment.Manager()
-
         # VOMS stuff
         try:
             self.voms_json = jsonutils.loads(
@@ -183,8 +182,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         tenant_name = voinfo.get("tenant", "")
 
         try:
-            tenant_ref = self.assignment_api.get_project_by_name(tenant_name,
-                                                                 self.domain)
+            tenant_ref = self.resource_api.get_project_by_name(tenant_name,
+                                                               self.domain)
         except ks_exc.ProjectNotFound:
             LOG.warning(_("VO mapping not properly configured for '%s'") %
                         user_vo)
@@ -208,7 +207,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         self.assignment_api.add_user_to_project(tenant_id, user_id)
 
     def _search_role(self, r_name):
-        for role in self.assignment_api.list_roles():
+        for role in self.role_api.list_roles():
             if role.get('name') == r_name:
                 return role
         return None
@@ -218,7 +217,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         # a get_role_by_name would be useful
         user_roles = self.assignment_api.get_roles_for_user_and_project(
             user_id, tenant_id)
-        role_names = [self.assignment_api.get_role(role_id).get('name')
+        role_names = [self.role_api.get_role(role_id).get('name')
                       for role_id in user_roles]
         # add missing roles
         for r_name in CONF.voms.user_roles:
@@ -231,7 +230,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                 r_id = uuid.uuid4().hex
                 role = {'id': r_id,
                         'name': r_name}
-                self.assignment_api.create_role(r_id, role)
+                self.role_api.create_role(r_id, role)
             LOG.debug(_("Adding role '%s' to user") % r_name)
             self.assignment_api.add_role_to_user_and_project(user_id,
                                                              tenant_id,
