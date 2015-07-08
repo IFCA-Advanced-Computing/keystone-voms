@@ -20,10 +20,10 @@ Section: python
 Depends: ${python:Depends}, ${misc:Depends},
  libvomsapi1,
  python-m2crypto,
- python-keystone (>= 1:2014.1),
- python-keystone (<< 1:2014.2),
- keystone (>= 1:2014.1), 
- keystone (<< 1:2014.2)
+ python-keystone (>= 1:2015.1),
+ python-keystone (<< 1:2015.2),
+ keystone (>= 1:2015.1), 
+ keystone (<< 1:2015.2)
 Suggests: voms-clients
 Provides: ${python:Provides}
 XS-Python-Version: ${python:Versions}
