@@ -1,3 +1,10 @@
+python-keystone-voms (2014.2-2) stable; urgency=medium
+
+  [ Alvaro Lopez Garcia ]
+  * Fix wrong dependencies
+
+ -- Alvaro Lopez Garcia <aloga@ifca.unican.es>  Thu, 29 Oct 2015 09:57:42 +0100
+
 python-keystone-voms (2014.2-1) stable; urgency=medium
 
   [ Enol Fernandez ]
