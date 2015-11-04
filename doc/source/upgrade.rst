@@ -13,7 +13,7 @@
       License for the specific language governing permissions and limitations
       under the License.
 
-Uprade notes
+Upgrade notes
 ============
 
 Upgrading to 2014.2 (Juno)

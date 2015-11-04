@@ -34,11 +34,12 @@ You must have `EUgridPMA <http://www.eugridpma.org/>`_ certificates installed
 on its standard location (``/etc/grid-security/certificates``) and the
 ``fetch-crl`` package properly working so as have the CRLs up to date::
 
-    wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | sudo apt-key add -
-    echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" | sudo tee --append /etc/apt/sources.list.d/egi-cas.list
-    sudo apt-get update
-    sudo apt-get install ca-policy-egi-core fetch-crl
-    sudo fetch-crl
+    # wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | apt-key add -
+    # echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" \
+      | tee --append /etc/apt/sources.list.d/egi-cas.list
+    # apt-get update
+    # apt-get install ca-policy-egi-core fetch-crl
+    # fetch-crl
 
 VOMS libraries
 ~~~~~~~~~~~~~~
@@ -46,16 +47,28 @@ VOMS libraries
 You must install the VOMS libraries. Please install the ``libvomsapi1`` package in Debian/Ubuntu or
 ``voms`` package in RedHat/Fedora/ScientificLinux/etc::
 
-    sudo apt-get install libvomsapi1
+    # apt-get install libvomsapi1
 
 Apache Installation and Configuration
 -------------------------------------
 
+.. note::
+    In Kilo, the keystone project deprecates Eventlet in favor of a WSGI
+    server. This guide uses the Apache HTTP server with mod_wsgi to serve
+    keystone requests on ports 5000 and 35357. By default, the keystone service
+    still listens on ports 5000 and 35357. Therefore, this guide disables the
+    keystone service.
+
+Disable keystone from starting automatically::
+
+    # service keystone stop
+    # echo "manual" > /etc/init/keystone.override
+
 You need keystone working under Apache WSGI with ``mod_ssl`` enabled. To do so,
 install the packages, and enable the relevant modules::
 
-    sudo apt-get install apache2 libapache2-mod-wsgi
-    sudo a2enmod ssl
+    # apt-get install apache2 libapache2-mod-wsgi
+    # a2enmod ssl
 
 Then configure your Apache server like this (we assume that you have the CA
 certificates installed in the default location, otherwise you should adapt it to
@@ -83,7 +96,7 @@ for the http server (``SSLCertificateKeyFile`` and ``SSLCACertificatePath``)::
         SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
         SSLOptions              +StdEnvVars +ExportCertData
 
-        WSGIScriptAlias /  /usr/lib/cgi-bin/keystone/main
+        WSGIScriptAlias /  /var/www/cgi-bin/keystone/main
         WSGIProcessGroup keystone
     </VirtualHost>
 
@@ -105,7 +118,7 @@ for the http server (``SSLCertificateKeyFile`` and ``SSLCACertificatePath``)::
         SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
         SSLOptions              +StdEnvVars +ExportCertData
 
-        WSGIScriptAlias     / /usr/lib/cgi-bin/keystone/admin
+        WSGIScriptAlias     / /var/www/cgi-bin/keystone/admin
         WSGIProcessGroup    keystoneapi
     </VirtualHost>
 
@@ -115,14 +128,17 @@ without a VOMS proxy can authenticate using their Keystone credentials.
 To run Keystone as a WSGI applicantion you must create a WSGI script as the one
 already included in the  `Github Keystone repository
 <https://github.com/openstack/keystone/blob/stable/icehouse/httpd/keystone.py>`_.
-Copy this script to ``/usr/lib/cgi-bin/keystone/keystone.py`` and create the
+Copy this script to ``/var/www/cgi-bin/keystone/keystone.py`` and create the
 following links::
 
-    sudo mkdir -p /usr/lib/cgi-bin/keystone
-    sudo cp httpd/keystone.py /usr/lib/cgi-bin/keystone/keystone.py
-    sudo ln /usr/lib/cgi-bin/keystone/keystone.py /usr/lib/cgi-bin/keystone/main
-    sudo ln /usr/lib/cgi-bin/keystone/keystone.py /usr/lib/cgi-bin/keystone/admin
-    sudo service apache2 restart
+    # rm -Rf /usr/lib/cgi-bin/keystone
+    # mkdir -p /var/www/cgi-bin/keystone
+    # curl http://git.openstack.org/cgit/openstack/keystone/plain/httpd/keystone.py?h=stable/kilo \
+      | tee /var/www/cgi-bin/keystone/keystone.py
+    # ln /var/www/cgi-bin/keystone/keystone.py /var/www/cgi-bin/keystone/main
+    # ln /var/www/cgi-bin/keystone/keystone.py /var/www/cgi-bin/keystone/admin
+    # chown -R keystone:keystone /var/www/cgi-bin/keystone
+    # service apache2 restart
 
 You should adjust the ``keystone.py`` file so that the configuration file
 points to your keystone configuration file if it is not in the default location
@@ -131,7 +147,9 @@ points to your keystone configuration file if it is not in the default location
 Also, do not forget to set the variable ``OPENSSL_ALLOW_PROXY_CERTS`` to
 ``1`` in your Apache environment (``/etc/apache2/envvars`` in Debian/Ubuntu) so
 that X.509 proxy certificates are accepted by OpenSSL. This is an important
-thing, so please double check that you have really enabled it.
+thing, so please double check that you have really enabled it::
+
+    # echo "export OPENSSL_ALLOW_PROXY_CERTS=1" >> /etc/apache2/envvars
 
 With the above configuration, and assuming that the Keystone host is
 ``keystone.example.org`` the endpoints will be as follow:
@@ -158,6 +176,7 @@ file ``/etc/keystone/keystone.conf`` contains a ``[token]`` section as
 follows::
 
   [token]
+  (...)
   driver = keystone.token.backends.sql.Token
 
 Catalog

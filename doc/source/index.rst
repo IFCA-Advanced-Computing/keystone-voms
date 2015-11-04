@@ -25,10 +25,6 @@ Keystone native mechanisms.
 
 This documentation is based on a Keystone 2015.1 (Kilo) installation.
 
-.. attention::
-    If you are upgrading from any priorversion, check the
-    :doc:`Upgrade nodes <upgrade>` before proceeding.
-
 * Only V2 authentication is supported in Juno so far.
 * If you are using the 2014.1 (Icehouse) version, please check the `Icehouse
   Documentation <http://keystone-voms.readthedocs.org/en/stable-icehouse/>`_.
@@ -52,7 +48,18 @@ Deploying a VOMS Authentication in Keystone
 ===========================================
 
 If you are a resource provider willing to deploy a VOMS-enabled keystone
-service, check the following documentation:
+service, check the following documentation.
+
+.. attention::
+    If you are upgrading from any priorversion, check the
+    :doc:`Upgrade nodes <upgrade>` before proceeding.
+
+.. note::
+    Default configuration files vary by distribution. You might need to add
+    these sections and options rather than modifying existing sections and
+    options. Also, an ellipsis (...) in the configuration snippets indicates
+    potential default configuration options that you should retain.
+
 
 .. toctree::
    :maxdepth: 1

@@ -29,7 +29,7 @@ plan to install it like this, remove any prior version installed via pip.  And
 check that you are removing the old versions. If you did not install this
 module using pip, just ignore this step::
 
-    pip uninstall python-keystone-voms keystone-voms
+    # pip uninstall python-keystone-voms keystone-voms
 
 
 Ubuntu 14.04
@@ -37,14 +37,15 @@ Ubuntu 14.04
 
 First of all, install the repository key into the APT list of trusted keys::
 
-    curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/juno/xUbuntu_14.04/Release.key | apt-key add -
+    # curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/kilo/xUbuntu_14.04/Release.key | apt-key add -
 
 Make sure that you don't have any other cloud integration repo for an old
 release, and add the repository to your ``sources.list.d`` directory::
 
-    echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/juno/xUbuntu_14.04/ ./" > /etc/apt/sources.list.d/aloga-cloud-integration-juno.list << EOF
-    apt-get update
-    apt-get install python-keystone-voms
+    # echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/kilo/xUbuntu_14.04/ ./" \
+      | tee /etc/apt/sources.list.d/aloga-cloud-integration-kilo.list
+    # apt-get update
+    # apt-get install python-keystone-voms
 
 
 Install from pip
@@ -53,12 +54,12 @@ Install from pip
 Before the PyPi package was called ``python-keystone-voms``. You should remove
 if before installing it::
 
-    pip uninstall python-keystone-voms
+    # pip uninstall python-keystone-voms
 
 With a running Keystone Icehouse you can install the VOMS module with the
 following command (note the version range)::
 
-    pip install 'keystone-voms>=2015.1,<2015.2'
+    # pip install 'keystone-voms>=2015.1,<2015.2'
 
 Install from source
 ~~~~~~~~~~~~~~~~~~~
@@ -66,14 +67,14 @@ Install from source
 First, uninstall any old ``python-keystone-voms`` installation. This was the
 old name of the package and should be removed::
 
-    sudo pip uninstall python-keystone-voms
+    # pip uninstall python-keystone-voms
 
 With a running Keystone Icehouse, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
-    git clone git://github.com/IFCA/keystone-voms.git -b stable/juno
-    cd keystone-voms
-    sudo pip install .
+    # git clone git://github.com/IFCA/keystone-voms.git -b stable/kilo
+    # cd keystone-voms
+    # pip install .
 
 Enable the Keystone VOMS module
 -------------------------------
@@ -93,6 +94,7 @@ API. Probably, you should add it before the ``debug``, ``ec2_extension``,
 ``user_crud_extension`` and ``public_service`` components::
 
     [pipeline:public_api]
+    (...)
     pipeline = sizelimit url_normalize build_auth_context token_auth admin_token_auth xml_body_v2 json_body ec2_extension voms user_crud_extension public_service
 
 Note that you may have a different pipeline. You don't need to replace your
