@@ -37,15 +37,16 @@ on its standard location (``/etc/grid-security/certificates``) and the
     wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | sudo apt-key add -
     echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" | sudo tee --append /etc/apt/sources.list.d/egi-cas.list
     sudo apt-get update
-    sudo aptitude install ca-policy-egi-core fetch-crl
+    sudo apt-get install ca-policy-egi-core fetch-crl
     sudo fetch-crl
 
 VOMS libraries
 ~~~~~~~~~~~~~~
 
 You must install the VOMS libraries. Please install the ``libvomsapi1`` package in Debian/Ubuntu or
-``voms`` package in RedHat/Fedora/ScientificLinux/etc.
+``voms`` package in RedHat/Fedora/ScientificLinux/etc::
 
+    sudo apt-get install libvomsapi1
 
 Apache Installation and Configuration
 -------------------------------------
@@ -53,7 +54,7 @@ Apache Installation and Configuration
 You need keystone working under Apache WSGI with ``mod_ssl`` enabled. To do so,
 install the packages, and enable the relevant modules::
 
-    sudo aptitude install apache2 libapache2-mod-wsgi
+    sudo apt-get install apache2 libapache2-mod-wsgi
     sudo a2enmod ssl
 
 Then configure your Apache server like this (we assume that you have the CA
