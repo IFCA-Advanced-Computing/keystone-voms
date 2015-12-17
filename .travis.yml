@@ -21,6 +21,8 @@ virtualenv:
     system_site_packages: true
 
 install:
+    - git clone https://github.com/openstack/keystone/ -b stable/liberty /tmp/keystone
+    - pip install /tmp/keystone
     - pip install tox
     - pip install -r requirements.txt
     - pip install -r test-requirements.txt
