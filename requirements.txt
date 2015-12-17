@@ -1,2 +1,5 @@
-pbr>=0.6,!=0.7,<1.0
+pbr>=1.6
 M2Crypto
+oslo.config>=2.3.0
+oslo.log>=1.8.0
+oslo.serialization>=1.4.0
