@@ -4,12 +4,16 @@ python:
 
 install: 
     - sudo apt-get update
-    - sudo apt-get install -y swig libvomsapi1
+    - sudo apt-get install -y libvomsapi1 python-m2crypto swig
     - git clone https://github.com/openstack/keystone/ -b stable/liberty /tmp/keystone/
     - pip install -r /tmp/keystone/requirements.txt
     - pip install -r /tmp/keystone/test-requirements.txt
     - pip install -r requirements.txt
     - pip install .
+    # this is the fastest way to get m2crypto working in the virtualenv, using site-packages breaks
+    # keystone testing for me
+    - rm -rf $VIRTUAL_ENV/lib/python2.7/site-packages/M2Crypto
+    - ln -s /usr/lib/python2.7/dist-packages/M2Crypto $VIRTUAL_ENV/lib/python2.7/site-packages/M2Crypto
     - cp tests/*py /tmp/keystone/keystone/tests/unit
     - cp tests/config_files/* /tmp/keystone/keystone/tests/unit/config_files
 
