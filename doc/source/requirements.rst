@@ -19,9 +19,10 @@ Requirements
 The Keystone VOMS authentication module requires some additional packages to be
 installed. Moreover, it requires that you run Keystone as a WSGI application behind
 an HTTP server (Apache will be used in this documentation, but any webserver
-could make it).
+could make it). Keystone project has deprecated eventlet, so you should be already
+running Keystone in such way.
 
-* Keystone Juno.
+* Keystone Liberty.
 * EUgridPMA CA certificates at the latest version.
 * fetch-crl package.
 * VOMS libraries.

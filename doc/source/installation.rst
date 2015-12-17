@@ -16,7 +16,7 @@
 VOMS module Installation
 ========================
 
-This module assumes that you are running the Keystone 8.0.0 (Liberty) version.
+This module assumes that you are running the Keystone 8 (Liberty) version.
 
 Install the Keystone VOMS module
 --------------------------------
