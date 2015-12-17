@@ -15,7 +15,7 @@
 import uuid
 
 import M2Crypto
-from oslo.config import cfg
+from oslo_config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils
 
