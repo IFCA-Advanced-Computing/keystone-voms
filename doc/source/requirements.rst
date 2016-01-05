@@ -34,18 +34,11 @@ You must have `EUgridPMA <http://www.eugridpma.org/>`_ certificates installed
 on its standard location (``/etc/grid-security/certificates``) and the
 ``fetch-crl`` package properly working so as have the CRLs up to date::
 
-    wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | apt-key add -
-    echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" > /etc/apt/sources.list.d/egi-cas.list
-    sudo aptitude update
-    sudo aptitude install ca-policy-egi-core
-
-Grab and install the ``fetch-crl`` package. Version 3 does not work properly,
-so get version 2.8.5 instead::
-
-    wget http://ftp.de.debian.org/debian/pool/main/f/fetch-crl/fetch-crl_2.8.5-2_all.deb
-    sudo dpkg -i fetch-crl_2.8.5-2_all.deb
+    wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | sudo apt-key add -
+    echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" | sudo tee --append /etc/apt/sources.list.d/egi-cas.list
+    sudo apt-get update
+    sudo aptitude install ca-policy-egi-core fetch-crl
     sudo fetch-crl
-
 
 VOMS libraries
 ~~~~~~~~~~~~~~

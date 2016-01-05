@@ -16,8 +16,7 @@
 VOMS module Installation
 ========================
 
-This module assumes that keystone is at least running the Keystone 2014.2
-(Juno) version.
+This module assumes that you are running the Keystone 2015.1 (Kilo) version.
 
 Install the Keystone VOMS module
 --------------------------------
@@ -59,7 +58,7 @@ if before installing it::
 With a running Keystone Icehouse you can install the VOMS module with the
 following command (note the version range)::
 
-    pip install 'keystone-voms>=2014.2,<2015.1'
+    pip install 'keystone-voms>=2015.1,<2015.2'
 
 Install from source
 ~~~~~~~~~~~~~~~~~~~

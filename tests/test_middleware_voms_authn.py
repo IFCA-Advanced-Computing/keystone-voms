@@ -18,11 +18,11 @@ from keystone import config
 from keystone import exception as ks_exc
 from keystone.assignment import controllers
 from keystone import middleware
-from keystone import tests
-from keystone.tests import default_fixtures
-from keystone.tests.ksfixtures import database
-from keystone.tests import test_auth
-from keystone.tests import test_middleware
+from keystone.tests import unit as tests
+from keystone.tests.unit import default_fixtures
+from keystone.tests.unit.ksfixtures import database
+from keystone.tests.unit import test_auth
+from keystone.tests.unit import test_middleware
 
 import keystone_voms.core as ks_voms
 from  keystone_voms import exception
@@ -417,7 +417,7 @@ class VomsTokenService(test_auth.AuthTest):
         remote_token = self.controller.authenticate(context,
                                                     params["auth"])
 
-        tenant_controller = controllers.Tenant()
+        tenant_controller = controllers.TenantAssignment()
         fake_context = {
             "token_id": remote_token["access"]["token"]["id"],
             "query_string": {"limit": None},
@@ -501,7 +501,7 @@ class VomsTokenService(test_auth.AuthTest):
         self.assignment_api.add_user_to_project(self.tenant_id, user["id"])
         # create roles and add them to user
         for r in CONF.voms.user_roles:
-            self.assignment_api.create_role(r, {'id': r, 'name': r})
+            self.role_api.create_role(r, {'id': r, 'name': r})
             self.assignment_api.add_role_to_user_and_project(user["id"],
                                                              self.tenant_id,
                                                              r)
