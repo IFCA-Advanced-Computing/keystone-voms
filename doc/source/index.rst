@@ -23,7 +23,7 @@ authentication plugin, so that Keystone will preserve its original
 features and users will still be able to authenticate using any of the
 Keystone native mechanisms.
 
-This documentation is based on a Keystone 2015.1 (Kilo) installation.
+This documentation is based on a Keystone 8.0.0 (Liberty) installation.
 
 * Only V2 authentication is supported in Juno so far.
 * If you are using the 2014.1 (Icehouse) version, please check the `Icehouse
@@ -31,6 +31,9 @@ This documentation is based on a Keystone 2015.1 (Kilo) installation.
   Note that support in Icehouse is only for V2 authentication.
 * If you are using the 2014.2 (Juno) version, please check the `Juno
   Documentation <http://keystone-voms.readthedocs.org/en/stable-juno/>`_.
+  Note that support in Icehouse is only for V2 authentication.
+* If you are using the 2015.1 (Kilo) version, please check the `Juno
+  Documentation <http://keystone-voms.readthedocs.org/en/stable-kilo/>`_.
   Note that support in Icehouse is only for V2 authentication.
 
 User documentation

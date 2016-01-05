@@ -16,7 +16,7 @@
 VOMS module Installation
 ========================
 
-This module assumes that you are running the Keystone 2015.1 (Kilo) version.
+This module assumes that you are running the Keystone 8.0.0 (Liberty) version.
 
 Install the Keystone VOMS module
 --------------------------------
@@ -37,13 +37,13 @@ Ubuntu 14.04
 
 First of all, install the repository key into the APT list of trusted keys::
 
-    # curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/kilo/xUbuntu_14.04/Release.key | apt-key add -
+    # curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/liberty/xUbuntu_14.04/Release.key | apt-key add -
 
 Make sure that you don't have any other cloud integration repo for an old
 release, and add the repository to your ``sources.list.d`` directory::
 
-    # echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/kilo/xUbuntu_14.04/ ./" \
-      | tee /etc/apt/sources.list.d/aloga-cloud-integration-kilo.list
+    # echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/liberty/xUbuntu_14.04/ ./" \
+      | tee /etc/apt/sources.list.d/aloga-cloud-integration-liberty.list
     # apt-get update
     # apt-get install python-keystone-voms
 
@@ -59,7 +59,7 @@ if before installing it::
 With a running Keystone Icehouse you can install the VOMS module with the
 following command (note the version range)::
 
-    # pip install 'keystone-voms>=2015.1,<2015.2'
+    # pip install 'keystone-voms>=8.0.0,<9.0.0'
 
 Install from source
 ~~~~~~~~~~~~~~~~~~~
@@ -72,7 +72,7 @@ old name of the package and should be removed::
 With a running Keystone Icehouse, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
-    # git clone git://github.com/IFCA/keystone-voms.git -b stable/kilo
+    # git clone git://github.com/IFCA/keystone-voms.git -b stable/liberty
     # cd keystone-voms
     # pip install .
 
