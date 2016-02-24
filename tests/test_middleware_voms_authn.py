@@ -14,9 +14,9 @@
 
 import uuid
 
+from keystone.assignment import controllers
 from keystone import config
 from keystone import exception as ks_exc
-from keystone.assignment import controllers
 from keystone import middleware
 from keystone.tests import unit as tests
 from keystone.tests.unit import default_fixtures
