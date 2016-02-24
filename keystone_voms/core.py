@@ -311,7 +311,6 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             user_dn, tenant = self._get_user(self.voms_info,
                                              tenant_from_req)
 
-            #params["auth"]["tenantName"] = tenant
             request.environ['REMOTE_USER'] = user_dn
 
     def process_request(self, request):
