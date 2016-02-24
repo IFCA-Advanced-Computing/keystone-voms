@@ -1,3 +1,3 @@
 pbr>=0.6,!=0.7,<1.0
 M2Crypto
-six
+python-keystone>=8.0.0,<9.0.0
