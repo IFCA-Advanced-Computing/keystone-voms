@@ -24,6 +24,7 @@ import M2Crypto
 from oslo.config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils
+import six
 
 from keystone_voms import exception
 from keystone_voms import voms_helper
@@ -129,7 +130,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             for attr in ('user', 'userca', 'server', 'serverca',
                          'voname', 'uri', 'version', 'serial',
                          ('not_before', 'date1'), ('not_after', 'date2')):
-                if isinstance(attr, basestring):
+                if isinstance(attr, six.string_types):
                     d[attr] = getattr(voms_data, attr)
                 else:
                     d[attr[0]] = getattr(voms_data, attr[1])
