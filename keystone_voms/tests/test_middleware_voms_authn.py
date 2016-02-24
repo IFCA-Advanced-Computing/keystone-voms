@@ -16,9 +16,11 @@ import os.path
 import uuid
 
 from keystone.assignment import controllers
+from keystone.common import authorization
 from keystone import config
 from keystone import exception as ks_exc
 from keystone import middleware
+from keystone.models import token_model
 from keystone.tests import unit as tests
 from keystone.tests.unit import default_fixtures
 from keystone.tests.unit.ksfixtures import database
@@ -489,10 +491,17 @@ class VomsTokenService(test_auth.AuthTest):
                                                     params["auth"])
 
         tenant_controller = controllers.TenantAssignment()
+
+        token_id = remote_token["access"]["token"]["id"]
+        token_ref = token_model.KeystoneToken(token_id=token_id,
+                                              token_data=remote_token)
+        auth_context = authorization.token_to_auth_context(token_ref)
         fake_context = {
-            "token_id": remote_token["access"]["token"]["id"],
+            "environment": {authorization.AUTH_CONTEXT_ENV: auth_context},
+            "token_id": token_id,
             "query_string": {"limit": None},
         }
+
         tenants = tenant_controller.get_projects_for_token(fake_context)
         self.assertItemsEqual(
             (self.tenant_id, tenant_id),  # User tenants
