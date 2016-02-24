@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os.path
 import uuid
 
 from keystone.assignment import controllers
@@ -169,16 +170,40 @@ def prepare_request(body=None, cert=None, chain=None):
     return req
 
 
+TESTSDIR = os.path.dirname(os.path.abspath(__file__))
+TESTCONF = os.path.join(TESTSDIR, 'config_files')
+ROOTDIR = os.path.normpath(os.path.join(TESTSDIR, '..', '..', '..'))
+VENDOR = os.path.join(ROOTDIR, 'vendor')
+ETCDIR = os.path.join(ROOTDIR, 'etc')
+
+
+class dirs(object):
+    @staticmethod
+    def root(*p):
+        return os.path.join(ROOTDIR, *p)
+
+    @staticmethod
+    def etc(*p):
+        return os.path.join(ETCDIR, *p)
+
+    @staticmethod
+    def tests(*p):
+        return os.path.join(TESTSDIR, *p)
+
+    @staticmethod
+    def tests_conf(*p):
+        return os.path.join(TESTCONF, *p)
+
+
 class MiddlewareVomsAuthn(tests.TestCase):
     def setUp(self):
         super(MiddlewareVomsAuthn, self).setUp()
-        self.config([tests.dirs.etc('keystone.conf.sample'),
-                     tests.dirs.tests_conf('keystone_voms.conf')])
+        self.config([dirs.tests_conf('keystone_voms.conf')])
         self.useFixture(database.Database())
         self.load_backends()
         self.load_fixtures(default_fixtures)
         self.tenant_name = default_fixtures.TENANTS[0]['name']
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms.json")
 
     def test_middleware_proxy_unscoped(self):
         """Verify unscoped request."""
@@ -218,7 +243,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_tenant_not_found(self):
         """Verify that mapping to a non existing tenant raises ks_exc."""
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_tenant.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms_no_tenant.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -231,7 +256,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_vo_not_found(self):
         """Verify that no VO-tenant mapping raises ks_exc."""
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -244,7 +269,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_vo_not_found_unscoped(self):
         """Verify that no VO-tenant mapping raises ks_exc."""
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
@@ -417,11 +442,10 @@ class MiddlewareVomsAuthn(tests.TestCase):
 class VomsTokenService(test_auth.AuthTest):
     def setUp(self):
         super(VomsTokenService, self).setUp()
-        self.config([tests.dirs.etc('keystone.conf.sample'),
-                     tests.dirs.tests_conf('keystone_voms.conf')])
+        self.config([dirs.tests_conf('keystone_voms.conf')])
         self.tenant_name = default_fixtures.TENANTS[0]['name']
         self.tenant_id = default_fixtures.TENANTS[0]['id']
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms.json")
         self.aux_tenant_name = default_fixtures.TENANTS[1]['name']
 
     def test_unscoped_remote_authn(self):
