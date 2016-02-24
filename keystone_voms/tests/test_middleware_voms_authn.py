@@ -620,6 +620,7 @@ class VomsTokenService(test_auth.AuthTest):
     def test_user_tenants_filter_by_vo(self):
         """Verify that multiple tenants are filtered out."""
         CONF.voms.voms_policy = dirs.tests_conf("voms_multiple_vos.json")
+
         # first request with dteam proxy
         req_dteam = prepare_request(get_auth_body(),
                                     valid_cert,
@@ -628,27 +629,40 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req_dteam)
         params = req_dteam.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req_dteam.environ,
+        context = {"environment": req_dteam.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
-        tenant_controller = controllers.Tenant()
+        tenant_controller = controllers.TenantAssignment()
+        token_id = remote_token["access"]["token"]["id"]
+        token_ref = token_model.KeystoneToken(token_id=token_id,
+                                              token_data=remote_token)
+        auth_context = authorization.token_to_auth_context(token_ref)
         fake_context = {
-            "token_id": remote_token["access"]["token"]["id"],
+            "environment": {authorization.AUTH_CONTEXT_ENV: auth_context},
+            "token_id": token_id,
             "query_string": {"limit": None},
         }
         tenants = tenant_controller.get_projects_for_token(fake_context)
         dteam_tenants = aux._filter_tenants(tenants["tenants"])
         self.assertEqual(self.tenant_name, dteam_tenants[0]["name"])
+
         # repeat with other VO
         req_ops = prepare_request(get_auth_body(),
                                   valid_cert_ops,
                                   valid_cert_chain)
         aux._process_request(req_ops)
         params = req_dteam.environ[middleware.PARAMS_ENV]
-        remote_token = self.controller.authenticate(req_dteam.environ,
+        context = {"environment": req_dteam.environ}
+        remote_token = self.controller.authenticate(context,
                                                     params["auth"])
-        tenant_controller = controllers.Tenant()
+        tenant_controller = controllers.TenantAssignment()
+        token_id = remote_token["access"]["token"]["id"]
+        token_ref = token_model.KeystoneToken(token_id=token_id,
+                                              token_data=remote_token)
+        auth_context = authorization.token_to_auth_context(token_ref)
         fake_context = {
-            "token_id": remote_token["access"]["token"]["id"],
+            "environment": {authorization.AUTH_CONTEXT_ENV: auth_context},
+            "token_id": token_id,
             "query_string": {"limit": None},
         }
         tenants = tenant_controller.get_projects_for_token(fake_context)
