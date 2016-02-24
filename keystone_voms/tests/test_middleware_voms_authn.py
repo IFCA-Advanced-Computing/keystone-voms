@@ -610,7 +610,7 @@ class VomsTokenService(test_auth.AuthTest):
 
     def test_user_tenants_filter_by_vo(self):
         """Verify that multiple tenants are filtered out."""
-        CONF.voms.voms_policy = "voms_multiple_vos.json"
+        CONF.voms.voms_policy = dirs.tests_conf("voms_multiple_vos.json")
         # first request with dteam proxy
         req_dteam = prepare_request(get_auth_body(),
                                     valid_cert,
