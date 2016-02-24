@@ -13,6 +13,10 @@
 # under the License.
 
 import ctypes
+import sys
+
+if sys.version_info > (3,):
+    long = int
 
 
 class _voms(ctypes.Structure):
