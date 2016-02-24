@@ -16,7 +16,7 @@ from keystone import exception
 
 
 class VomsError(exception.Error):
-    """Voms credential management error"""
+    """Voms credential management error."""
 
     errors = {
         0: ('none', None),

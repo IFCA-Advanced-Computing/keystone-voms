@@ -53,7 +53,7 @@ class _vomsdata(ctypes.Structure):
 
 
 class VOMS(object):
-    """Context Manager for VOMS handling"""
+    """Context Manager for VOMS handling."""
 
     def __init__(self, vomsdir_path, ca_path, vomsapi_lib):
         self.VOMSApi = ctypes.CDLL(vomsapi_lib)
