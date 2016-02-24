@@ -127,7 +127,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
             d = {}
             for attr in ('user', 'userca', 'server', 'serverca',
-                         'voname',  'uri', 'version', 'serial',
+                         'voname', 'uri', 'version', 'serial',
                          ('not_before', 'date1'), ('not_after', 'date2')):
                 if isinstance(attr, basestring):
                     d[attr] = getattr(voms_data, attr)

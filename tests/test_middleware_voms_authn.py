@@ -26,7 +26,7 @@ from keystone.tests.unit import test_middleware
 from oslo_serialization import jsonutils
 
 import keystone_voms.core as ks_voms
-from  keystone_voms import exception
+from keystone_voms import exception
 
 
 CONF = config.CONF
@@ -625,4 +625,3 @@ class VomsTokenService(test_auth.AuthTest):
         # check that is correctly filtered out
         self.assertEqual(1, len(ops_tenants))
         self.assertEqual(self.aux_tenant_name, ops_tenants[0]["name"])
-
