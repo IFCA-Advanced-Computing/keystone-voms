@@ -83,7 +83,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         except ValueError:
             raise ks_exc.UnexpectedError("Bad formatted VOMS json data "
                                          "from %s" % CONF.voms.voms_policy)
-        except:
+        except Exception:
             raise ks_exc.UnexpectedError("Could not load VOMS json file "
                                          "%s" % CONF.voms.voms_policy)
 
