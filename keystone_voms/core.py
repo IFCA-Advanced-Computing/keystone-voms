@@ -233,8 +233,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         return self.identity_api.create_user(user)
 
     def _add_user_to_tenant(self, user_id, tenant_id):
-        LOG.info(_("Automatically adding user %s to tenant %s") %
-                 (user_id, tenant_id))
+        LOG.info(_("Automatically adding user %(user)s to tenant %(tenant)s")
+                 % {"user": user_id, "tenant": tenant_id})
         self.assignment_api.add_user_to_project(tenant_id, user_id)
 
     def _search_role(self, r_name):
