@@ -15,16 +15,15 @@
 import copy
 import uuid
 
-import M2Crypto
-from oslo.config import cfg
-from oslo_log import log
-from oslo_serialization import jsonutils
-
 from keystone.common import dependency
 from keystone.common import wsgi
 from keystone import exception as ks_exc
 from keystone.i18n import _
 import keystone.middleware
+import M2Crypto
+from oslo.config import cfg
+from oslo_log import log
+from oslo_serialization import jsonutils
 
 from keystone_voms import exception
 from keystone_voms import voms_helper
