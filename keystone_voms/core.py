@@ -71,7 +71,7 @@ SSL_CLIENT_CERT_CHAIN_ENV_PREFIX = "SSL_CLIENT_CERT_CHAIN_"
 @dependency.requires('identity_api', 'assignment_api', 'resource_api',
                      'role_api')
 class VomsAuthNMiddleware(wsgi.Middleware):
-    """Filter that checks for the SSL data in the reqest.
+    """Filter that checks for the SSL data in the request.
 
     Sets 'ssl' in the context as a dictionary containing this data.
     """
@@ -97,7 +97,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
     @staticmethod
     def _get_cert_chain(ssl_info):
-        """Return certificate and chain from the ssl info in M2Crypto format"""
+        """Return cert and chain from the ssl info in M2Crypto format."""
 
         cert = M2Crypto.X509.load_cert_string(ssl_info.get("cert", ""))
         chain = M2Crypto.X509.X509_Stack()
@@ -144,8 +144,9 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
     @staticmethod
     def _split_fqan(fqan):
-        """
-        gets a fqan and returns a tuple containing
+        """Splits a FQAN into VO/groups, roles and capability.
+
+        returns a tuple containing
         (vo/groups, role, capability)
         """
         l = fqan.split("/")

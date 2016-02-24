@@ -397,8 +397,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
             None)
 
     def test_middleware_applicable_with_proxy(self):
-        """Verify that the middleware is applicable when a proxy is
-           included in the request even without body."""
+        """Verify that the middleware is applicable without body."""
         req = prepare_request(None,
                               valid_cert,
                               valid_cert_chain)
@@ -412,7 +411,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         resp = test_middleware.make_response(
             body=jsonutils.dumps({"tenants": [{}]}))
         aux = keystone_voms.VomsAuthNMiddleware(None)
-        self.assertTrue(aux.should_process_response(None, resp)) 
+        self.assertTrue(aux.should_process_response(None, resp))
 
 
 class VomsTokenService(test_auth.AuthTest):
