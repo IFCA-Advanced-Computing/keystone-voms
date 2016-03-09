@@ -104,3 +104,25 @@ class KeystoneVomsException(Exception):
         # NOTE(mrodden): use the first argument to the python Exception object
         # which should be our full NovaException message, (see __init__)
         return self.args[0]
+
+
+class Unauthorized(KeystoneVomsException):
+    msg_fmt = "The request you have made requires authentication."
+    code = 401
+    title = 'Unauthorized'
+
+
+class VerifyCertificateError(Unauthorized):
+    msg_fmt = "Cannot verify certificate with DN '%(subject)s': %(reason)s"
+
+
+class CertificateRevoked(Unauthorized):
+    msg_fmt = "Certificate with DN '%(subject)s' is revoked."
+
+
+class CaOpenError(KeystoneVomsException):
+    msg_fmt = "Cannot open CA file %(file)s: %(reason)s"
+
+
+class FileError(KeystoneVomsException):
+    msg_fmt = "Cannot load file %(file)s: %(reason)s"
