@@ -1,19 +1,32 @@
+# We need sudo until this pr gets merged
+# https://github.com/travis-ci/apt-package-whitelist/pull/2497
+sudo: true
+
+before_install:
+    - sudo apt-get -qq update
+    - sudo apt-get install -y libvomsapi1
+
 language: python
 python:
-    - "2.7"
+    "2.7"
 
-install: 
-    - sudo apt-get update
-    - sudo apt-get install -y swig libvomsapi1
-    - git clone https://github.com/openstack/keystone/ -b stable/liberty /tmp/keystone/
-    - pip install -r /tmp/keystone/requirements.txt
-    - pip install -r /tmp/keystone/test-requirements.txt
+addons:
+    apt:
+        packages:
+            - swig
+            - libvomsapi1
+            - python-m2crypto
+
+virtualenv:
+    system_site_packages: true
+
+install:
+    - git clone https://github.com/openstack/keystone/ -b stable/liberty /tmp/keystone
+    - pip install /tmp/keystone
+    - pip install tox
     - pip install -r requirements.txt
-    - pip install .
-    - cp tests/*py /tmp/keystone/keystone/tests/unit
-    - cp tests/config_files/* /tmp/keystone/keystone/tests/unit/config_files
+    - pip install -r test-requirements.txt
 
 script:
-    - pep8 keystone_voms
-    - cd /tmp/keystone/
-    - nosetests keystone.tests.unit.test_middleware_voms_authn
+    - python setup.py testr --slowest
+    - flake8

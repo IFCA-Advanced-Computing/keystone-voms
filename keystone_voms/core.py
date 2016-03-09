@@ -15,16 +15,16 @@
 import copy
 import uuid
 
-import M2Crypto
-from oslo.config import cfg
-from oslo_log import log
-from oslo_serialization import jsonutils
-
 from keystone.common import dependency
 from keystone.common import wsgi
 from keystone import exception as ks_exc
 from keystone.i18n import _
 import keystone.middleware
+import M2Crypto
+from oslo_config import cfg
+from oslo_log import log
+from oslo_serialization import jsonutils
+import six
 
 from keystone_voms import exception
 from keystone_voms import voms_helper
@@ -72,7 +72,7 @@ SSL_CLIENT_CERT_CHAIN_ENV_PREFIX = "SSL_CLIENT_CERT_CHAIN_"
 @dependency.requires('identity_api', 'assignment_api', 'resource_api',
                      'role_api')
 class VomsAuthNMiddleware(wsgi.Middleware):
-    """Filter that checks for the SSL data in the reqest.
+    """Filter that checks for the SSL data in the request.
 
     Sets 'ssl' in the context as a dictionary containing this data.
     """
@@ -84,7 +84,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         except ValueError:
             raise ks_exc.UnexpectedError("Bad formatted VOMS json data "
                                          "from %s" % CONF.voms.voms_policy)
-        except:
+        except Exception:
             raise ks_exc.UnexpectedError("Could not load VOMS json file "
                                          "%s" % CONF.voms.voms_policy)
 
@@ -98,7 +98,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
     @staticmethod
     def _get_cert_chain(ssl_info):
-        """Return certificate and chain from the ssl info in M2Crypto format"""
+        """Return cert and chain from the ssl info in M2Crypto format."""
 
         cert = M2Crypto.X509.load_cert_string(ssl_info.get("cert", ""))
         chain = M2Crypto.X509.X509_Stack()
@@ -128,9 +128,9 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
             d = {}
             for attr in ('user', 'userca', 'server', 'serverca',
-                         'voname',  'uri', 'version', 'serial',
+                         'voname', 'uri', 'version', 'serial',
                          ('not_before', 'date1'), ('not_after', 'date2')):
-                if isinstance(attr, basestring):
+                if isinstance(attr, six.string_types):
                     d[attr] = getattr(voms_data, attr)
                 else:
                     d[attr[0]] = getattr(voms_data, attr[1])
@@ -145,8 +145,9 @@ class VomsAuthNMiddleware(wsgi.Middleware):
 
     @staticmethod
     def _split_fqan(fqan):
-        """
-        gets a fqan and returns a tuple containing
+        """Splits a FQAN into VO/groups, roles and capability.
+
+        returns a tuple containing
         (vo/groups, role, capability)
         """
         l = fqan.split("/")
@@ -232,8 +233,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         return self.identity_api.create_user(user)
 
     def _add_user_to_tenant(self, user_id, tenant_id):
-        LOG.info(_("Automatically adding user %s to tenant %s") %
-                 (user_id, tenant_id))
+        LOG.info(_("Automatically adding user %(user)s to tenant %(tenant)s")
+                 % {"user": user_id, "tenant": tenant_id})
         self.assignment_api.add_user_to_project(tenant_id, user_id)
 
     def _search_role(self, r_name):
@@ -311,7 +312,6 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             user_dn, tenant = self._get_user(self.voms_info,
                                              tenant_from_req)
 
-            #params["auth"]["tenantName"] = tenant
             request.environ['REMOTE_USER'] = user_dn
 
     def process_request(self, request):
