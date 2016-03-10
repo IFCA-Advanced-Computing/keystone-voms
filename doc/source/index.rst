@@ -37,7 +37,7 @@ This documentation is based on a Keystone 8 (Liberty) installation.
   Documentation <http://keystone-voms.readthedocs.org/en/stable-juno/>`_.
   Note that support in Icehouse is only for V2 authentication.
 * If you are using the 2015.1 (Kilo) version, please check the `Kilo
-  Documentation <http://keystone-voms.readthedocs.org/en/stable-kilo`_.
+  Documentation <http://keystone-voms.readthedocs.org/en/stable-kilo/>`_.
   Note that support in Kilo is only for V2 authentication.
 
 
