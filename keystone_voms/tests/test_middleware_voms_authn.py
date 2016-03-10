@@ -12,20 +12,24 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os.path
 import uuid
 
+from keystone.assignment import controllers
+from keystone.common import authorization
 from keystone import config
 from keystone import exception as ks_exc
-from keystone.assignment import controllers
 from keystone import middleware
+from keystone.models import token_model
 from keystone.tests import unit as tests
 from keystone.tests.unit import default_fixtures
 from keystone.tests.unit.ksfixtures import database
 from keystone.tests.unit import test_auth
 from keystone.tests.unit import test_middleware
+from oslo_serialization import jsonutils
 
-import keystone_voms.core as ks_voms
-from  keystone_voms import exception
+from keystone_voms import core
+from keystone_voms import exception
 
 
 CONF = config.CONF
@@ -34,41 +38,69 @@ CONF = config.CONF
 user_dn = "/C=ES/O=FAKE CA/CN=Fake User"
 user_vo = "dteam"
 valid_cert = """-----BEGIN CERTIFICATE-----
-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
-W5Rbega2GkADBQ==
------END CERTIFICATE----- """
+MIIFbjCCBRigAwIBAgICEAEwDQYJKoZIhvcNAQEFBQAwMzELMAkGA1UEBhMCRVMx
+EDAOBgNVBAoMB0ZBS0UgQ0ExEjAQBgNVBAMMCUZha2UgVXNlcjAeFw0xNDAzMDcx
+NTE0MzJaFw0xNTAzMDcxNTEzMzFaMEMxCzAJBgNVBAYTAkVTMRAwDgYDVQQKDAdG
+QUtFIENBMRIwEAYDVQQDDAlGYWtlIFVzZXIxDjAMBgNVBAMTBXByb3h5MIGfMA0G
+CSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrbByGElKKnl+KOsu+3rliwZd7ECcXoBR2
+0yP/UZgquXfWairX/QIqlkHUVkJm162e3BJYNsbTHgvNi0G8xF+tZoST/piPHp8c
+p4BN/j7+ivFPDr/hzfcDSlbiW5oVPS79lF388KeS1ugjRlZ39fp0abqhH9tHnNYV
++2mogs2y1QIDAQABo4IDwDCCA7wwggN6BgorBgEEAb5FZGQFBIIDajCCA2YwggNi
+MIIDXjCCAwgCAQEwP6A9MDekNTAzMQswCQYDVQQGEwJFUzEQMA4GA1UECgwHRkFL
+RSBDQTESMBAGA1UEAwwJRmFrZSBVc2VyAgIQAaA5MDekNTAzMQswCQYDVQQGEwJF
+UzEQMA4GA1UECgwHRkFLRSBDQTESMBAGA1UEAwwJdm8uc2VydmVyMA0GCSqGSIb3
+DQEBBQUAAgEBMCIYDzIwMTQwMzA3MTUxOTMyWhgPMjAyMzAzMDUxNTE5MzJaMEIw
+QAYKKwYBBAG+RWRkBDEyMDCgCoYIZHRlYW06Ly8wIgQgL2R0ZWFtL1JvbGU9TlVM
+TC9DYXBhYmlsaXR5PU5VTEwwggILMIIB2wYKKwYBBAG+RWRkCgSCAcswggHHMIIB
+wzCCAb8wggFpoAMCAQICAhAAMA0GCSqGSIb3DQEBBQUAMB8xCzAJBgNVBAYTAkVT
+MRAwDgYDVQQKDAdGQUtFIENBMB4XDTE0MDMwNzE1MTA1NloXDTE1MDMwNzE1MTA1
+NlowMzELMAkGA1UEBhMCRVMxEDAOBgNVBAoMB0ZBS0UgQ0ExEjAQBgNVBAMMCXZv
+LnNlcnZlcjBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQDfesNHVPkdxCQcX3Aq71XA
+8/vZysZ/CDRj9LQWNhoqXPjb1zc23L/rvjAZxFj+4NLA3nyO0WEQWwqBkMMSThdN
+AgMBAAGjezB5MAkGA1UdEwQCMAAwLAYJYIZIAYb4QgENBB8WHU9wZW5TU0wgR2Vu
+ZXJhdGVkIENlcnRpZmljYXRlMB0GA1UdDgQWBBTLUv7L69wZLJkJjRoQWO9poNMb
+lzAfBgNVHSMEGDAWgBT4zG7I0zoiqxp0kB8pI2Zs3fM4QzANBgkqhkiG9w0BAQUF
+AANBABEZZ2DlG4EZba71aeiqGcBrUQdw+7QVQbt2PRKKIbq+nwxo/bO4KhpRg/0l
+ocmWhaXt8dAA1x9vl4gZpM4d6k0wCQYDVR04BAIFADAfBgNVHSMEGDAWgBTLUv7L
+69wZLJkJjRoQWO9poNMblzANBgkqhkiG9w0BAQUFAANBAJaxrvkxHjly9GdY+pcZ
+AaLb9+4Re/pNiAuvyCXvPt1kZjGkTrYeFDJVy2Si3m5PEfs8zNu7/WFV8mtJ14O7
+ZGwwDQYDVR0PAQH/BAMDAQAwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBQKznTb
+hGZG2a4auaivGQEdepyg0DANBgkqhkiG9w0BAQUFAANBALPDO7pWcfRhiiEF+G0/
+H3Q1KTtztRZX5N0GJSsvpgwb4wx4cs+8pU7Srh6CCJtkp5C1I8B7ExsYbDo9A34f
+4JY=
+-----END CERTIFICATE-----"""
+
+valid_cert_ops = """-----BEGIN CERTIFICATE-----
+MIIFajCCBRSgAwIBAgICEAEwDQYJKoZIhvcNAQEFBQAwMzELMAkGA1UEBhMCRVMx
+EDAOBgNVBAoMB0ZBS0UgQ0ExEjAQBgNVBAMMCUZha2UgVXNlcjAeFw0xNDAzMDcx
+NTE4MjRaFw0xNTAzMDcxNTEzMzFaMEMxCzAJBgNVBAYTAkVTMRAwDgYDVQQKDAdG
+QUtFIENBMRIwEAYDVQQDDAlGYWtlIFVzZXIxDjAMBgNVBAMTBXByb3h5MIGfMA0G
+CSqGSIb3DQEBAQUAA4GNADCBiQKBgQCkRl6cfNS2QxSzPaonT9GvkildBulUfIsQ
+73L4OzLZc0bAE9AE02T+F6v93L2TCwiNXaH540KEBGO1NdHNN01WcfY5wDmKheaO
+3IOCHb2JqAC5MlQFUnBOdtm6KSaTupa2O9qTus9LY/CwmwBH0EmofSoQSX9ZyBfa
+qwWwMFATrQIDAQABo4IDvDCCA7gwggN2BgorBgEEAb5FZGQFBIIDZjCCA2IwggNe
+MIIDWjCCAwQCAQEwP6A9MDekNTAzMQswCQYDVQQGEwJFUzEQMA4GA1UECgwHRkFL
+RSBDQTESMBAGA1UEAwwJRmFrZSBVc2VyAgIQAaA5MDekNTAzMQswCQYDVQQGEwJF
+UzEQMA4GA1UECgwHRkFLRSBDQTESMBAGA1UEAwwJdm8uc2VydmVyMA0GCSqGSIb3
+DQEBBQUAAgEBMCIYDzIwMTQwMzA3MTUyMzI0WhgPMjAyMzAzMDUxNTIzMjRaMD4w
+PAYKKwYBBAG+RWRkBDEuMCygCIYGb3BzOi8vMCAEHi9vcHMvUm9sZT1OVUxML0Nh
+cGFiaWxpdHk9TlVMTDCCAgswggHbBgorBgEEAb5FZGQKBIIByzCCAccwggHDMIIB
+vzCCAWmgAwIBAgICEAAwDQYJKoZIhvcNAQEFBQAwHzELMAkGA1UEBhMCRVMxEDAO
+BgNVBAoMB0ZBS0UgQ0EwHhcNMTQwMzA3MTUxMDU2WhcNMTUwMzA3MTUxMDU2WjAz
+MQswCQYDVQQGEwJFUzEQMA4GA1UECgwHRkFLRSBDQTESMBAGA1UEAwwJdm8uc2Vy
+dmVyMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAN96w0dU+R3EJBxfcCrvVcDz+9nK
+xn8INGP0tBY2Gipc+NvXNzbcv+u+MBnEWP7g0sDefI7RYRBbCoGQwxJOF00CAwEA
+AaN7MHkwCQYDVR0TBAIwADAsBglghkgBhvhCAQ0EHxYdT3BlblNTTCBHZW5lcmF0
+ZWQgQ2VydGlmaWNhdGUwHQYDVR0OBBYEFMtS/svr3BksmQmNGhBY72mg0xuXMB8G
+A1UdIwQYMBaAFPjMbsjTOiKrGnSQHykjZmzd8zhDMA0GCSqGSIb3DQEBBQUAA0EA
+ERlnYOUbgRltrvVp6KoZwGtRB3D7tBVBu3Y9Eoohur6fDGj9s7gqGlGD/SWhyZaF
+pe3x0ADXH2+XiBmkzh3qTTAJBgNVHTgEAgUAMB8GA1UdIwQYMBaAFMtS/svr3Bks
+mQmNGhBY72mg0xuXMA0GCSqGSIb3DQEBBQUAA0EAnAla85kPlMPoxeR9DdgFAzws
+VzuLJgIyVzEWZT8V3MtFSid0uag3MdWa2HuPlJWHnbTfQtTh1VSHWLT3HfBAITAN
+BgNVHQ8BAf8EAwMBADAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFArOdNuEZkbZ
+rhq5qK8ZAR16nKDQMA0GCSqGSIb3DQEBBQUAA0EAjWmZ1TQJnZjwTeGrCKyObvJo
+malXGGFFp8UB8+bLfJbRfgRuAICdhxnVG22ktAnszYTGP4vhXJ9UsKvkb4jKxg==
+-----END CERTIFICATE-----"""
 
 valid_cert_chain = """-----BEGIN CERTIFICATE-----
 MIIBwTCCASoCAQYwDQYJKoZIhvcNAQEEBQAwHzEQMA4GA1UEChMHRkFLRSBDQTEL
@@ -133,30 +165,54 @@ def prepare_request(body=None, cert=None, chain=None):
     if body:
         req.environ[middleware.PARAMS_ENV] = body
     if cert:
-        req.environ[ks_voms.SSL_CLIENT_CERT_ENV] = cert
+        req.environ[core.SSL_CLIENT_CERT_ENV] = cert
     if chain:
-        req.environ[ks_voms.SSL_CLIENT_CERT_CHAIN_ENV_PREFIX +
+        req.environ[core.SSL_CLIENT_CERT_CHAIN_ENV_PREFIX +
                     "0"] = chain
     return req
+
+
+TESTSDIR = os.path.dirname(os.path.abspath(__file__))
+TESTCONF = os.path.join(TESTSDIR, 'config_files')
+ROOTDIR = os.path.normpath(os.path.join(TESTSDIR, '..', '..', '..'))
+VENDOR = os.path.join(ROOTDIR, 'vendor')
+ETCDIR = os.path.join(ROOTDIR, 'etc')
+
+
+class dirs(object):
+    @staticmethod
+    def root(*p):
+        return os.path.join(ROOTDIR, *p)
+
+    @staticmethod
+    def etc(*p):
+        return os.path.join(ETCDIR, *p)
+
+    @staticmethod
+    def tests(*p):
+        return os.path.join(TESTSDIR, *p)
+
+    @staticmethod
+    def tests_conf(*p):
+        return os.path.join(TESTCONF, *p)
 
 
 class MiddlewareVomsAuthn(tests.TestCase):
     def setUp(self):
         super(MiddlewareVomsAuthn, self).setUp()
-        self.config([tests.dirs.etc('keystone.conf.sample'),
-                     tests.dirs.tests_conf('keystone_voms.conf')])
+        self.config([dirs.tests_conf('keystone_voms.conf')])
         self.useFixture(database.Database())
         self.load_backends()
         self.load_fixtures(default_fixtures)
         self.tenant_name = default_fixtures.TENANTS[0]['name']
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms.json")
 
     def test_middleware_proxy_unscoped(self):
         """Verify unscoped request."""
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -169,7 +225,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -180,7 +236,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=uuid.uuid4().hex),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
             ks_exc.Unauthorized,
@@ -189,11 +245,11 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_tenant_not_found(self):
         """Verify that mapping to a non existing tenant raises ks_exc."""
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_tenant.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms_no_tenant.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
             ks_exc.Unauthorized,
@@ -202,11 +258,11 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_vo_not_found(self):
         """Verify that no VO-tenant mapping raises ks_exc."""
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
             ks_exc.Unauthorized,
@@ -215,11 +271,11 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     def test_middleware_proxy_vo_not_found_unscoped(self):
         """Verify that no VO-tenant mapping raises ks_exc."""
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms_no_vo.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms_no_vo.json")
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
             ks_exc.Unauthorized,
@@ -232,7 +288,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -245,7 +301,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
                               valid_cert,
                               valid_cert_chain)
 
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -264,7 +320,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -276,7 +332,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -286,7 +342,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         user_out = req.environ['REMOTE_USER']
@@ -298,7 +354,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
             ks_exc.UserNotFound,
@@ -311,7 +367,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         self.assertRaises(
             ks_exc.UserNotFound,
@@ -325,7 +381,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
                               valid_cert_chain)
         self.assertRaises(
             exception.VomsError,
-            ks_voms.VomsAuthNMiddleware(None)._process_request,
+            core.VomsAuthNMiddleware(None)._process_request,
             req)
 
     def test_middleware_no_proxy(self):
@@ -334,7 +390,7 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req.environ[middleware.PARAMS_ENV] = get_auth_body()
         self.assertRaises(
             ks_exc.ValidationError,
-            ks_voms.VomsAuthNMiddleware(None)._process_request,
+            core.VomsAuthNMiddleware(None)._process_request,
             req)
 
     def test_middleware_incorrect_json(self):
@@ -343,20 +399,20 @@ class MiddlewareVomsAuthn(tests.TestCase):
         req.environ[middleware.PARAMS_ENV] = {"auth": {"voms": "True"}}
         self.assertRaises(
             ks_exc.ValidationError,
-            ks_voms.VomsAuthNMiddleware(None)._process_request,
+            core.VomsAuthNMiddleware(None)._process_request,
             req)
 
     def test_middleware_no_params(self):
         """Verify that empty request returns none."""
         req = prepare_request()
-        ret = ks_voms.VomsAuthNMiddleware(None)._process_request(req)
+        ret = core.VomsAuthNMiddleware(None)._process_request(req)
         self.assertIsNone(ret)
 
     def test_middleware_remote_user_set(self):
         """Verify that if REMOTE_USER already set we skip the auth."""
         req = prepare_request()
         req.environ["REMOTE_USER"] = "Fake"
-        ret = ks_voms.VomsAuthNMiddleware(None)._process_request(req)
+        ret = core.VomsAuthNMiddleware(None)._process_request(req)
         self.assertIsNone(ret)
 
     def test_no_json_data(self):
@@ -364,25 +420,42 @@ class MiddlewareVomsAuthn(tests.TestCase):
         CONF.voms.voms_policy = None
         self.assertRaises(
             ks_exc.UnexpectedError,
-            ks_voms.VomsAuthNMiddleware,
+            core.VomsAuthNMiddleware,
             None)
+
+    def test_middleware_applicable_with_proxy(self):
+        """Verify that the middleware is applicable without body."""
+        req = prepare_request(None,
+                              valid_cert,
+                              valid_cert_chain)
+        aux = core.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        ret = aux._process_request(req)
+        self.assertEqual(ret, None)
+
+    def test_middleware_should_process_response(self):
+        """Verify response is processed when there is a list of tenants."""
+        resp = test_middleware.make_response(
+            body=jsonutils.dumps({"tenants": [{}]}))
+        aux = core.VomsAuthNMiddleware(None)
+        self.assertTrue(aux.should_process_response(None, resp))
 
 
 class VomsTokenService(test_auth.AuthTest):
     def setUp(self):
         super(VomsTokenService, self).setUp()
-        self.config([tests.dirs.etc('keystone.conf.sample'),
-                     tests.dirs.tests_conf('keystone_voms.conf')])
+        self.config([dirs.tests_conf('keystone_voms.conf')])
         self.tenant_name = default_fixtures.TENANTS[0]['name']
         self.tenant_id = default_fixtures.TENANTS[0]['id']
-        CONF.voms.voms_policy = tests.dirs.tests_conf("voms.json")
+        CONF.voms.voms_policy = dirs.tests_conf("voms.json")
+        self.aux_tenant_name = default_fixtures.TENANTS[1]['name']
 
     def test_unscoped_remote_authn(self):
         """Verify unscoped request."""
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -409,7 +482,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -418,10 +491,17 @@ class VomsTokenService(test_auth.AuthTest):
                                                     params["auth"])
 
         tenant_controller = controllers.TenantAssignment()
+
+        token_id = remote_token["access"]["token"]["id"]
+        token_ref = token_model.KeystoneToken(token_id=token_id,
+                                              token_data=remote_token)
+        auth_context = authorization.token_to_auth_context(token_ref)
         fake_context = {
-            "token_id": remote_token["access"]["token"]["id"],
+            "environment": {authorization.AUTH_CONTEXT_ENV: auth_context},
+            "token_id": token_id,
             "query_string": {"limit": None},
         }
+
         tenants = tenant_controller.get_projects_for_token(fake_context)
         self.assertItemsEqual(
             (self.tenant_id, tenant_id),  # User tenants
@@ -429,11 +509,11 @@ class VomsTokenService(test_auth.AuthTest):
         )
 
     def test_scoped_remote_authn(self):
-        """Verify unscoped request."""
+        """Verify scoped request."""
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -452,7 +532,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -476,7 +556,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -508,7 +588,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -526,7 +606,7 @@ class VomsTokenService(test_auth.AuthTest):
         req = prepare_request(get_auth_body(tenant=self.tenant_name),
                               valid_cert,
                               valid_cert_chain)
-        aux = ks_voms.VomsAuthNMiddleware(None)
+        aux = core.VomsAuthNMiddleware(None)
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
@@ -536,3 +616,59 @@ class VomsTokenService(test_auth.AuthTest):
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertNotIn("role1", roles)
         self.assertNotIn("role2", roles)
+
+    def test_user_tenants_filter_by_vo(self):
+        """Verify that multiple tenants are filtered out."""
+        CONF.voms.voms_policy = dirs.tests_conf("voms_multiple_vos.json")
+
+        # first request with dteam proxy
+        req_dteam = prepare_request(get_auth_body(),
+                                    valid_cert,
+                                    valid_cert_chain)
+        aux = core.VomsAuthNMiddleware(None)
+        aux._no_verify = True
+        aux._process_request(req_dteam)
+        params = req_dteam.environ[middleware.PARAMS_ENV]
+        context = {"environment": req_dteam.environ}
+        remote_token = self.controller.authenticate(context,
+                                                    params["auth"])
+        tenant_controller = controllers.TenantAssignment()
+        token_id = remote_token["access"]["token"]["id"]
+        token_ref = token_model.KeystoneToken(token_id=token_id,
+                                              token_data=remote_token)
+        auth_context = authorization.token_to_auth_context(token_ref)
+        fake_context = {
+            "environment": {authorization.AUTH_CONTEXT_ENV: auth_context},
+            "token_id": token_id,
+            "query_string": {"limit": None},
+        }
+        tenants = tenant_controller.get_projects_for_token(fake_context)
+        dteam_tenants = aux._filter_tenants(tenants["tenants"])
+        self.assertEqual(self.tenant_name, dteam_tenants[0]["name"])
+
+        # repeat with other VO
+        req_ops = prepare_request(get_auth_body(),
+                                  valid_cert_ops,
+                                  valid_cert_chain)
+        aux._process_request(req_ops)
+        params = req_dteam.environ[middleware.PARAMS_ENV]
+        context = {"environment": req_dteam.environ}
+        remote_token = self.controller.authenticate(context,
+                                                    params["auth"])
+        tenant_controller = controllers.TenantAssignment()
+        token_id = remote_token["access"]["token"]["id"]
+        token_ref = token_model.KeystoneToken(token_id=token_id,
+                                              token_data=remote_token)
+        auth_context = authorization.token_to_auth_context(token_ref)
+        fake_context = {
+            "environment": {authorization.AUTH_CONTEXT_ENV: auth_context},
+            "token_id": token_id,
+            "query_string": {"limit": None},
+        }
+        tenants = tenant_controller.get_projects_for_token(fake_context)
+        # user should be now in two tenants
+        self.assertEqual(2, len(tenants["tenants"]))
+        ops_tenants = aux._filter_tenants(tenants["tenants"])
+        # check that is correctly filtered out
+        self.assertEqual(1, len(ops_tenants))
+        self.assertEqual(self.aux_tenant_name, ops_tenants[0]["name"])
