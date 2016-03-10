@@ -24,8 +24,8 @@ be used to authenticate against a properly configured Keystone server.
 Keystone VOMS Overview
 ======================
 
-Follow this guide to enable your Keystone running in the Icehouse version to be
-used with VOMS authentication. No modifications in the DB are needed, since it
+Follow this guide to enable your Keystone to be used with VOMS authentication.
+No modifications in the DB are needed, since it
 will be installed as an external plugin. Therefore, your Keystone will be usable
 with any other authentication mechanism that you had implemented (such as the
 native Keystone authentication).

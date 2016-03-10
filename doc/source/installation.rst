@@ -47,6 +47,14 @@ release, and add the repository to your ``sources.list.d`` directory::
     # apt-get update
     # apt-get install python-keystone-voms
 
+CentOS 7
+^^^^^^^^
+
+Add the repository to yum and install::
+
+    # curl -L http://download.opensuse.org/repositories/home:aloga:cloud-integration:liberty/CentOS_7/home:aloga:cloud-integration:liberty.repo > /etc/yum.repos.d/home:aloga:cloud-integration:liberty.repo
+    # yum install python-keystone-voms
+
 
 Install from pip
 ~~~~~~~~~~~~~~~~
@@ -56,7 +64,7 @@ if before installing it::
 
     # pip uninstall python-keystone-voms
 
-With a running Keystone Icehouse you can install the VOMS module with the
+With a running Keystone you can install the VOMS module with the
 following command (note the version range)::
 
     # pip install 'keystone-voms>=8.0.0,<9.0.0'
@@ -69,7 +77,7 @@ old name of the package and should be removed::
 
     # pip uninstall python-keystone-voms
 
-With a running Keystone Icehouse, simply install this egg. In the upper-level
+With a running Keystone, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
     # git clone git://github.com/IFCA/keystone-voms.git -b stable/liberty
@@ -81,9 +89,8 @@ Enable the Keystone VOMS module
 
 The authentication module is a WSGI middleware that performs the authentication
 and passes the authenticated user down to keystone. Add the VOMS filter to your
-paste configuration file ``/etc/keystone/keystone-paste.ini`` (note that in
-Icehouse paste configuration has been moved to a separate configuration file
-and it is not anymore in the same file as the Keystone configuration). First,
+paste configuration file (``/etc/keystone/keystone-paste.ini`` is the default one
+in Ubuntu, ``/usr/share/keystone/keystone-dist-paste.ini`` in CentOS). First,
 add the VOMS filter as follows::
 
     [filter:voms]
