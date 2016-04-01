@@ -33,3 +33,13 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+*.sw?
+.venv
+.update-venv/
+.tox
+.testrepository/
+cover/*
+
+ChangeLog
+AUTHORS
