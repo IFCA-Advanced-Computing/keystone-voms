@@ -40,8 +40,6 @@ f5uvWQfeLR1cvpLhqf3UoFLB6vg+/KUHAOZskqpxGi/hK+YNBJKAAnsPuQRSJYB6
 user_dn = '/C=ES/O=Fake Org/CN=Elena Nito del Bosque'
 
 aux = crypto.load_certificate(crypto.FILETYPE_PEM, user_cert)
-
-user_dn = aux.get_subject()
 user_cert_serial_number = aux.get_serial_number()
 
 ca = """-----BEGIN CERTIFICATE-----
