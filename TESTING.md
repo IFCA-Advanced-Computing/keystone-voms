@@ -8,6 +8,6 @@ pip, you will need the required version as well, and then run "tox" with the
 "--sitepackages" option:
 
     apt-get install python-m2crypto
-    git clone https://github.com/openstack/keystone -b stable/liberty
+    git clone https://github.com/openstack/keystone -b stable/mitaka
     pip install keystone
     tox --sitepackages

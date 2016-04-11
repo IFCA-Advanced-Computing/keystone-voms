@@ -1,6 +1,6 @@
-# Keystone VOMS auth module [![Build Status](https://travis-ci.org/IFCA/keystone-voms.png?branch=stable/liberty)](https://travis-ci.org/IFCA/keystone-voms)
+# Keystone VOMS auth module [![Build Status](https://travis-ci.org/IFCA/keystone-voms.png?branch=stable/mitaka)](https://travis-ci.org/IFCA/keystone-voms)
 
-This module is intended to provide VOMS authentication to a Liberty
+This module is intended to provide VOMS authentication to a Mitaka
 OpenStack Keystone. It is designed to be integrated as an external
 authentication plugin, so that Keystone will preserve its original
 features and users will still be able to authenticate using any of the

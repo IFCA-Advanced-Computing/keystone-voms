@@ -22,7 +22,7 @@ an HTTP server (Apache will be used in this documentation, but any webserver
 could make it). Keystone project has deprecated eventlet, so you should be already
 running Keystone in such way.
 
-* Keystone Liberty.
+* Keystone Mitaka.
 * EUgridPMA CA certificates at the latest version.
 * fetch-crl package.
 * VOMS libraries.
@@ -147,7 +147,7 @@ without a VOMS proxy can authenticate using their Keystone credentials.
 
 If you do not have Keystone running already as WSGI application, you must
 create a WSGI script as the one already included in the  `Github Keystone repository
-<https://github.com/openstack/keystone/blob/stable/liberty/httpd/keystone.py>`_.
+<https://github.com/openstack/keystone/blob/stable/mitaka/httpd/keystone.py>`_.
 Copy this script to ``/var/www/cgi-bin/keystone/keystone.py``, create the
 following links and restart apache::
 

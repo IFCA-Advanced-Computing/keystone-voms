@@ -16,7 +16,7 @@
 VOMS module Installation
 ========================
 
-This module assumes that you are running the Keystone 8 (Liberty) version.
+This module assumes that you are running the Keystone 9 (Mitaka) version.
 
 Install the Keystone VOMS module
 --------------------------------
@@ -37,13 +37,13 @@ Ubuntu 14.04
 
 First of all, install the repository key into the APT list of trusted keys::
 
-    # curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/liberty/xUbuntu_14.04/Release.key | apt-key add -
+    # curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/mitaka/xUbuntu_14.04/Release.key | apt-key add -
 
 Make sure that you don't have any other cloud integration repo for an old
 release, and add the repository to your ``sources.list.d`` directory::
 
-    # echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/liberty/xUbuntu_14.04/ ./" \
-      | tee /etc/apt/sources.list.d/aloga-cloud-integration-liberty.list
+    # echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/mitaka/xUbuntu_14.04/ ./" \
+      | tee /etc/apt/sources.list.d/aloga-cloud-integration-mitaka.list
     # apt-get update
     # apt-get install python-keystone-voms
 
@@ -52,7 +52,7 @@ CentOS 7
 
 Add the repository to yum and install::
 
-    # curl -L http://download.opensuse.org/repositories/home:aloga:cloud-integration:liberty/CentOS_7/home:aloga:cloud-integration:liberty.repo > /etc/yum.repos.d/home:aloga:cloud-integration:liberty.repo
+    # curl -L http://download.opensuse.org/repositories/home:aloga:cloud-integration:mitaka/CentOS_7/home:aloga:cloud-integration:mitaka.repo > /etc/yum.repos.d/home:aloga:cloud-integration:mitaka.repo
     # yum install python-keystone-voms
 
 
@@ -67,7 +67,7 @@ if before installing it::
 With a running Keystone you can install the VOMS module with the
 following command (note the version range)::
 
-    # pip install 'keystone-voms>=8.0.0,<9.0.0'
+    # pip install 'keystone-voms>=9.0.0,<10.0.0'
 
 Install from source
 ~~~~~~~~~~~~~~~~~~~
@@ -80,7 +80,7 @@ old name of the package and should be removed::
 With a running Keystone, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
-    # git clone git://github.com/IFCA/keystone-voms.git -b stable/liberty
+    # git clone git://github.com/IFCA/keystone-voms.git -b stable/mitaka
     # cd keystone-voms
     # pip install .
 
@@ -89,9 +89,8 @@ Enable the Keystone VOMS module
 
 The authentication module is a WSGI middleware that performs the authentication
 and passes the authenticated user down to keystone. Add the VOMS filter to your
-paste configuration file (``/etc/keystone/keystone-paste.ini`` is the default one
-in Ubuntu, ``/usr/share/keystone/keystone-dist-paste.ini`` in CentOS). First,
-add the VOMS filter as follows::
+paste configuration file (``/etc/keystone/keystone-paste.ini`` is the default one)
+First, add the VOMS filter as follows::
 
     [filter:voms]
     paste.filter_factory = keystone_voms.core:VomsAuthNMiddleware.factory
