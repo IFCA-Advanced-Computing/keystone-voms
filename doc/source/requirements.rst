@@ -40,20 +40,20 @@ Ubuntu 14.04
 
 Use these commands to install on Ubuntu::
 
-    # wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | apt-key add -
-    # echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" \
+    $ wget -q -O - https://dist.eugridpma.info/distribution/igtf/current/GPG-KEY-EUGridPMA-RPM-3 | apt-key add -
+    $ echo "deb http://repository.egi.eu/sw/production/cas/1/current egi-igtf core" \
       | tee --append /etc/apt/sources.list.d/egi-cas.list
-    # apt-get update
-    # apt-get install ca-policy-egi-core fetch-crl
-    # fetch-crl
+    $ apt-get update
+    $ apt-get install ca-policy-egi-core fetch-crl
+    $ fetch-crl
 
 CentOS 7
 ^^^^^^^^
 
 Install CAs and fetch-crl with::
 
-    curl -L http://repository.egi.eu/sw/production/cas/1/current/repo-files/EGI-trustanchors.repo | sudo tee /etc/yum.repos.d/EGI-trustanchors.repo
-    sudo yum install ca-policy-egi-core fetch-crl
+    $ curl -L http://repository.egi.eu/sw/production/cas/1/current/repo-files/EGI-trustanchors.repo | sudo tee /etc/yum.repos.d/EGI-trustanchors.repo
+    $ sudo yum install ca-policy-egi-core fetch-crl
 
 VOMS libraries
 ~~~~~~~~~~~~~~
@@ -61,10 +61,10 @@ VOMS libraries
 You must install the VOMS libraries. Please install the ``libvomsapi1`` package in Debian/Ubuntu or
 ``voms`` package in RedHat/Fedora/ScientificLinux/etc::
 
-    # apt-get install libvomsapi1
+    $ apt-get install libvomsapi1
 
 Apache Installation and Configuration
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
     Since Kilo, the keystone project deprecates Eventlet in favor of a WSGI
@@ -75,18 +75,20 @@ Apache Installation and Configuration
 
 Disable keystone from starting automatically::
 
-    # service keystone stop
-    # echo "manual" > /etc/init/keystone.override
+    $ service keystone stop
+    $ echo "manual" > /etc/init/keystone.override
 
 You need keystone working under Apache WSGI with ``mod_ssl`` enabled. To do so,
 install the packages, and enable the relevant modules.
 
 Ubuntu::
-    # apt-get install apache2 libapache2-mod-wsgi
-    # a2enmod ssl
+
+    $ apt-get install apache2 libapache2-mod-wsgi
+    $ a2enmod ssl
 
 CentOS::
-    # yum install mod_ssl
+
+    $ yum install mod_ssl
 
 
 Then add to your Apache Keystone WSGI configuration the SSL options as shown below.
@@ -151,13 +153,13 @@ create a WSGI script as the one already included in the  `Github Keystone reposi
 Copy this script to ``/var/www/cgi-bin/keystone/keystone.py``, create the
 following links and restart apache::
 
-    # rm -Rf /usr/lib/cgi-bin/keystone
-    # mkdir -p /var/www/cgi-bin/keystone
-    # curl http://git.openstack.org/cgit/openstack/keystone/plain/httpd/keystone.py?h=stable/kilo \
-      | tee /var/www/cgi-bin/keystone/keystone.py
-    # ln /var/www/cgi-bin/keystone/keystone.py /var/www/cgi-bin/keystone/main
-    # ln /var/www/cgi-bin/keystone/keystone.py /var/www/cgi-bin/keystone/admin
-    # chown -R keystone:keystone /var/www/cgi-bin/keystone
+    $ rm -Rf /usr/lib/cgi-bin/keystone
+    $ mkdir -p /var/www/cgi-bin/keystone
+    $ curl http://git.openstack.org/cgit/openstack/keystone/plain/httpd/keystone.py?h=stable/kilo \
+        | tee /var/www/cgi-bin/keystone/keystone.py
+    $ ln /var/www/cgi-bin/keystone/keystone.py /var/www/cgi-bin/keystone/main
+    $ ln /var/www/cgi-bin/keystone/keystone.py /var/www/cgi-bin/keystone/admin
+    $ chown -R keystone:keystone /var/www/cgi-bin/keystone
 
 Also, do not forget to set the variable ``OPENSSL_ALLOW_PROXY_CERTS`` to
 ``1`` in your Apache environment (``/etc/apache2/envvars`` in Debian/Ubuntu,
@@ -166,10 +168,13 @@ by OpenSSL. This is an important thing, so please double check that you have
 really enabled it.
 
 Ubuntu::
-    # echo "export OPENSSL_ALLOW_PROXY_CERTS=1" >> /etc/apache2/envvars
+
+    $ echo "export OPENSSL_ALLOW_PROXY_CERTS=1" >> /etc/apache2/envvars
 
 CentOS::
-    # echo "OPENSSL_ALLOW_PROXY_CERTS=1" >> /etc/sysconfig/httpd
+
+    $ echo "OPENSSL_ALLOW_PROXY_CERTS=1" >> /etc/sysconfig/httpd
+
 
 With the above configuration, and assuming that the Keystone host is
 ``keystone.example.org`` the endpoints will be as follow:

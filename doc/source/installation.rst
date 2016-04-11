@@ -29,7 +29,7 @@ plan to install it like this, remove any prior version installed via pip.  And
 check that you are removing the old versions. If you did not install this
 module using pip, just ignore this step::
 
-    # pip uninstall python-keystone-voms keystone-voms
+    $ pip uninstall python-keystone-voms keystone-voms
 
 
 Ubuntu 14.04
@@ -37,23 +37,23 @@ Ubuntu 14.04
 
 First of all, install the repository key into the APT list of trusted keys::
 
-    # curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/mitaka/xUbuntu_14.04/Release.key | apt-key add -
+    $ curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/mitaka/xUbuntu_14.04/Release.key | apt-key add -
 
 Make sure that you don't have any other cloud integration repo for an old
 release, and add the repository to your ``sources.list.d`` directory::
 
-    # echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/mitaka/xUbuntu_14.04/ ./" \
-      | tee /etc/apt/sources.list.d/aloga-cloud-integration-mitaka.list
-    # apt-get update
-    # apt-get install python-keystone-voms
+    $ echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/mitaka/xUbuntu_14.04/ ./" \
+        | tee /etc/apt/sources.list.d/aloga-cloud-integration-mitaka.list
+    $ apt-get update
+    $ apt-get install python-keystone-voms
 
 CentOS 7
 ^^^^^^^^
 
 Add the repository to yum and install::
 
-    # curl -L http://download.opensuse.org/repositories/home:aloga:cloud-integration:mitaka/CentOS_7/home:aloga:cloud-integration:mitaka.repo > /etc/yum.repos.d/home:aloga:cloud-integration:mitaka.repo
-    # yum install python-keystone-voms
+    $ curl -L http://download.opensuse.org/repositories/home:aloga:cloud-integration:mitaka/CentOS_7/home:aloga:cloud-integration:mitaka.repo > /etc/yum.repos.d/home:aloga:cloud-integration:mitaka.repo
+    $ yum install python-keystone-voms
 
 
 Install from pip
@@ -62,12 +62,12 @@ Install from pip
 Before the PyPi package was called ``python-keystone-voms``. You should remove
 if before installing it::
 
-    # pip uninstall python-keystone-voms
+    $ pip uninstall python-keystone-voms
 
 With a running Keystone you can install the VOMS module with the
 following command (note the version range)::
 
-    # pip install 'keystone-voms>=9.0.0,<10.0.0'
+    $ pip install 'keystone-voms>=9.0.0,<10.0.0'
 
 Install from source
 ~~~~~~~~~~~~~~~~~~~
@@ -75,14 +75,14 @@ Install from source
 First, uninstall any old ``python-keystone-voms`` installation. This was the
 old name of the package and should be removed::
 
-    # pip uninstall python-keystone-voms
+    $ pip uninstall python-keystone-voms
 
 With a running Keystone, simply install this egg. In the upper-level
 directory run ``python setup.py install``::
 
-    # git clone git://github.com/IFCA/keystone-voms.git -b stable/mitaka
-    # cd keystone-voms
-    # pip install .
+    $ git clone git://github.com/IFCA/keystone-voms.git -b stable/mitaka
+    $ cd keystone-voms
+    $ pip install .
 
 Enable the Keystone VOMS module
 -------------------------------
