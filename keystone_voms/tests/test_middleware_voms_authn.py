@@ -17,7 +17,7 @@ import uuid
 
 from keystone.assignment import controllers
 from keystone.common import authorization
-from keystone import config
+from keystone.common import config
 from keystone import exception as ks_exc
 from keystone import middleware
 from keystone.models import token_model
