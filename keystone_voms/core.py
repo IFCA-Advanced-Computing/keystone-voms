@@ -76,7 +76,6 @@ class VomsAuthNMiddleware(wsgi.Middleware):
     def __init__(self, *args, **kwargs):
         self.domain = CONF.identity.default_domain_id or "default"
 
-        self.voms_obj = None
         self._voms_json = None
 
         super(VomsAuthNMiddleware, self).__init__(*args, **kwargs)
