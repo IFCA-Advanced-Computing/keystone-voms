@@ -78,17 +78,16 @@ class MiddlewareVomsAuthn(tests.TestCase):
 
     @mock.patch("__builtin__.open", mock.mock_open(read_data="{"))
     def test_init_invalid_json(self):
+        middleware = core.VomsAuthNMiddleware(None)
         self.assertRaises(ks_exc.UnexpectedError,
-                          core.VomsAuthNMiddleware,
-                          None)
+                          lambda: middleware.voms_json)
 
     @mock.patch("__builtin__.open")
-    def test_init_cannot_open_json_mapping(self, m_open):
+    def test_cannot_open_json_mapping(self, m_open):
         m_open.side_effect = IOError
-
+        middleware = core.VomsAuthNMiddleware(None)
         self.assertRaises(ks_exc.UnexpectedError,
-                          core.VomsAuthNMiddleware,
-                          None)
+                          lambda: middleware.voms_json)
 
     @mock.patch("keystone_voms.core.VomsAuthNMiddleware.identity_api",
                 create=True)

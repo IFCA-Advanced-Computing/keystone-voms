@@ -74,22 +74,26 @@ class VomsAuthNMiddleware(wsgi.Middleware):
     Sets 'ssl' in the context as a dictionary containing this data.
     """
     def __init__(self, *args, **kwargs):
-        # VOMS stuff
-        try:
-            self.voms_json = jsonutils.loads(
-                open(CONF.voms.voms_policy).read())
-        except ValueError:
-            raise ks_exc.UnexpectedError("Bad formatted VOMS json data "
-                                         "from %s" % CONF.voms.voms_policy)
-        except Exception:
-            raise ks_exc.UnexpectedError("Could not load VOMS json file "
-                                         "%s" % CONF.voms.voms_policy)
-
         self.domain = CONF.identity.default_domain_id or "default"
 
         self.voms_obj = None
+        self._voms_json = None
 
         super(VomsAuthNMiddleware, self).__init__(*args, **kwargs)
+
+    @property
+    def voms_json(self):
+        if self._voms_json is None:
+            try:
+                self._voms_json = jsonutils.loads(
+                    open(CONF.voms.voms_policy).read())
+            except ValueError:
+                raise ks_exc.UnexpectedError("Bad formatted VOMS json data "
+                                             "from %s" % CONF.voms.voms_policy)
+            except Exception:
+                raise ks_exc.ConfigFileNotFound(
+                    config_file=CONF.voms.voms_policy)
+        return self._voms_json
 
     @staticmethod
     def _split_fqan(fqan):
