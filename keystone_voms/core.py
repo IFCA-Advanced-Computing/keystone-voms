@@ -240,7 +240,10 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX):
                 chain.append(v)
 
-        # FIXME(aloga): validation error proxy chain??
+        if not (proxy and chain):
+            raise ks_exc.ValidationError(
+                attribute="X.509 Proxy Certificate",
+                target=CONTEXT_ENV)
 
         voms_obj = voms.VOMS(proxy, chain,
                              vomsdir_path=CONF.voms.vomsdir_path,
