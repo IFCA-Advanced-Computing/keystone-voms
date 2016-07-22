@@ -235,10 +235,10 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             return self.application
 
         proxy = request.environ.get(SSL_CLIENT_CERT_ENV, None)
-        chain = []
-        for k, v in request.environ.iteritems():
-            if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX):
-                chain.append(v)
+        keys = request.environ.keys()
+        keys.sort()
+        chain = [request.environ[k] for k in keys
+                 if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX)]
 
         if not (proxy and chain):
             raise ks_exc.ValidationError(
