@@ -385,6 +385,15 @@ class MiddlewareVomsAuthn(tests.TestCase):
         self.assertIsNone(ret)
 
     @mock.patch("__builtin__.open", mock.mock_open(read_data="{}"))
+    def test_middleware_no_ssl_data_with_voms_request(self):
+        """Verify that if REMOTE_USER already set we skip the auth."""
+        req = prepare_request(get_auth_body())
+        mdl = core.VomsAuthNMiddleware(None)
+        self.assertRaises(ks_exc.ValidationError,
+                          mdl._process_request,
+                          req)
+
+    @mock.patch("__builtin__.open", mock.mock_open(read_data="{}"))
     def test_middleware_should_process_response(self):
         resp = make_response(body=jsonutils.dumps({"tenants": [{}]}))
         aux = core.VomsAuthNMiddleware(None)
