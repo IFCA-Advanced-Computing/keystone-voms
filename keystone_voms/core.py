@@ -20,14 +20,11 @@ from keystone.common import wsgi
 from keystone import exception as ks_exc
 from keystone.i18n import _
 import keystone.middleware
-import M2Crypto
 from oslo_config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils
-import six
 
-from keystone_voms import exception
-from keystone_voms import voms_helper
+from keystone_voms import voms
 
 LOG = log.getLogger(__name__)
 
@@ -77,71 +74,25 @@ class VomsAuthNMiddleware(wsgi.Middleware):
     Sets 'ssl' in the context as a dictionary containing this data.
     """
     def __init__(self, *args, **kwargs):
-        # VOMS stuff
-        try:
-            self.voms_json = jsonutils.loads(
-                open(CONF.voms.voms_policy).read())
-        except ValueError:
-            raise ks_exc.UnexpectedError("Bad formatted VOMS json data "
-                                         "from %s" % CONF.voms.voms_policy)
-        except Exception:
-            raise ks_exc.UnexpectedError("Could not load VOMS json file "
-                                         "%s" % CONF.voms.voms_policy)
-
-        self.VOMSDIR = CONF.voms.vomsdir_path
-        self.CADIR = CONF.voms.ca_path
-        self._no_verify = False
-
         self.domain = CONF.identity.default_domain_id or "default"
+
+        self._voms_json = None
 
         super(VomsAuthNMiddleware, self).__init__(*args, **kwargs)
 
-    @staticmethod
-    def _get_cert_chain(ssl_info):
-        """Return cert and chain from the ssl info in M2Crypto format."""
-
-        cert = M2Crypto.X509.load_cert_string(ssl_info.get("cert", ""))
-        chain = M2Crypto.X509.X509_Stack()
-        for c in ssl_info.get("chain", []):
-            aux = M2Crypto.X509.load_cert_string(c)
-            if aux.check_ca():
-                continue  # Don't include CA certs
-            chain.push(aux)
-        return cert, chain
-
-    def _get_voms_info(self, ssl_info):
-        """Extract voms info from ssl_info and return dict with it."""
-
-        try:
-            cert, chain = self._get_cert_chain(ssl_info)
-        except M2Crypto.X509.X509Error:
-            return None
-
-        with voms_helper.VOMS(CONF.voms.vomsdir_path,
-                              CONF.voms.ca_path, CONF.voms.vomsapi_lib) as v:
-            if self._no_verify:
-                v.set_no_verify()
-            voms_data = v.retrieve(cert, chain)
-            if not voms_data:
-                # TODO(aloga): move this to a keystone exception
-                raise exception.VomsError(v.error.value)
-
-            d = {}
-            for attr in ('user', 'userca', 'server', 'serverca',
-                         'voname', 'uri', 'version', 'serial',
-                         ('not_before', 'date1'), ('not_after', 'date2')):
-                if isinstance(attr, six.string_types):
-                    d[attr] = getattr(voms_data, attr)
-                else:
-                    d[attr[0]] = getattr(voms_data, attr[1])
-
-            d["fqans"] = []
-            for fqan in iter(voms_data.fqan):
-                if fqan is None:
-                    break
-                d["fqans"].append(fqan)
-
-        return d
+    @property
+    def voms_json(self):
+        if self._voms_json is None:
+            try:
+                self._voms_json = jsonutils.loads(
+                    open(CONF.voms.voms_policy).read())
+            except ValueError:
+                raise ks_exc.UnexpectedError("Bad formatted VOMS json data "
+                                             "from %s" % CONF.voms.voms_policy)
+            except Exception:
+                raise ks_exc.ConfigFileNotFound(
+                    config_file=CONF.voms.voms_policy)
+        return self._voms_json
 
     @staticmethod
     def _split_fqan(fqan):
@@ -161,25 +112,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         if request.environ.get('REMOTE_USER', None) is not None:
             # authenticated upstream
             return False
-        # Try to figure out if SSL information includes VOMS info
-        ssl_dict = {
-            "dn": request.environ.get(SSL_CLIENT_S_DN_ENV, None),
-            "cert": request.environ.get(SSL_CLIENT_CERT_ENV, None),
-            "chain": [],
-        }
-        for k, v in request.environ.iteritems():
-            if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX):
-                ssl_dict["chain"].append(v)
 
-        self.voms_info = self._get_voms_info(ssl_dict)
-
-        if self.voms_info or self.should_process_request(request):
-            return True
-
-        return False
-
-    def should_process_request(self, request):
-        """Check if the request should be processed or not."""
         params = request.environ.get(PARAMS_ENV, {})
         auth = params.get("auth", {})
         if "voms" in auth:
@@ -199,9 +132,10 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             pass
         return False
 
-    def _get_project_from_voms(self, voms_info):
-        user_vo = voms_info["voname"]
-        user_fqans = voms_info["fqans"]
+    def _get_project_from_voms(self, voms_obj):
+        user_vo = voms_obj.voname
+        user_fqans = voms_obj.fqans
+        voinfo = None
         for fqan in user_fqans:
             voinfo = self.voms_json.get(fqan, {})
             if voinfo is not {}:
@@ -267,8 +201,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                                                              tenant_id,
                                                              role['id'])
 
-    def _get_user(self, voms_info, req_tenant):
-        user_dn = voms_info["user"]
+    def _get_user(self, voms_obj, req_tenant):
+        user_dn = voms_obj.user
         try:
             user_ref = self.identity_api.get_user_by_name(user_dn,
                                                           self.domain)
@@ -279,7 +213,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                 LOG.debug(_("REMOTE_USER %s not found") % user_dn)
                 raise
 
-        tenant = self._get_project_from_voms(voms_info)
+        tenant = self._get_project_from_voms(voms_obj)
         # If the user is requesting a wrong tenant, stop
         if req_tenant and req_tenant != tenant["name"]:
             raise ks_exc.Unauthorized
@@ -291,8 +225,8 @@ class VomsAuthNMiddleware(wsgi.Middleware):
             if tenant not in tenants:
                 self._add_user_to_tenant(user_ref['id'], tenant['id'])
 
-            if CONF.voms.add_roles:
-                self._update_user_roles(user_ref['id'], tenant['id'])
+        if CONF.voms.add_roles:
+            self._update_user_roles(user_ref['id'], tenant['id'])
 
         return user_dn, tenant['name']
 
@@ -300,25 +234,32 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         if not self.is_applicable(request):
             return self.application
 
-        if self.should_process_request(request):
-            if not self.voms_info:
-                raise ks_exc.ValidationError(
-                    attribute="SSL data",
-                    target=CONTEXT_ENV)
+        proxy = request.environ.get(SSL_CLIENT_CERT_ENV, None)
+        chain = []
+        for k, v in request.environ.iteritems():
+            if k.startswith(SSL_CLIENT_CERT_CHAIN_ENV_PREFIX):
+                chain.append(v)
 
-            params = request.environ.get(PARAMS_ENV)
-            tenant_from_req = params["auth"].get("tenantName", None)
+        # FIXME(aloga): validation error proxy chain??
 
-            user_dn, tenant = self._get_user(self.voms_info,
-                                             tenant_from_req)
+        voms_obj = voms.VOMS(proxy, chain,
+                             vomsdir_path=CONF.voms.vomsdir_path,
+                             ca_path=CONF.voms.ca_path)
 
-            request.environ['REMOTE_USER'] = user_dn
+        params = request.environ.get(PARAMS_ENV)
+        req_tenant = params["auth"].get("tenantName", None)
+
+        user_dn, tenant = self._get_user(voms_obj, req_tenant)
+
+        request.environ['REMOTE_USER'] = user_dn
+
+        self.voms_obj = voms_obj
 
     def process_request(self, request):
         return self._process_request(request)
 
     def _filter_tenants(self, tenants):
-        tenant = self._get_project_from_voms(self.voms_info)
+        tenant = self._get_project_from_voms(self.voms_obj)
         return [t for t in tenants if t['id'] == tenant['id']]
 
     def process_response(self, request, response):

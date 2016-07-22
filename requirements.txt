@@ -1,6 +1,6 @@
 pbr>=1.6
-M2Crypto<0.23
-keystone>=8.0.0,<9.0.0
+pyOpenSSL>=0.15
+cffi
 oslo.config>=2.3.0
 oslo.log>=1.8.0
 oslo.serialization>=1.4.0

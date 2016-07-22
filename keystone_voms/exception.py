@@ -13,6 +13,9 @@
 # under the License.
 
 from keystone import exception
+from oslo_log import log
+
+LOG = log.getLogger(__name__)
 
 
 class VomsError(exception.Error):
@@ -58,3 +61,68 @@ class VomsError(exception.Error):
         code, title = self.http_codes.get(code, (500, "Unexpected Error"))
         self.code = code
         self.title = title
+
+
+class KeystoneVomsException(Exception):
+    """Base Keystone Voms Exception
+
+    To correctly use this class, inherit from it and define
+    a 'msg_fmt' property. That msg_fmt will get printf'd
+    with the keyword arguments provided to the constructor.
+
+    """
+    msg_fmt = "An unknown exception occurred."
+    code = 500
+    headers = {}
+    safe = False
+
+    def __init__(self, message=None, **kwargs):
+        self.kwargs = kwargs
+
+        if 'code' not in self.kwargs:
+            try:
+                self.kwargs['code'] = self.code
+            except AttributeError:
+                pass
+
+        if not message:
+            try:
+                message = self.msg_fmt % kwargs
+
+            except Exception:
+                # kwargs doesn't match a variable in the message
+                # log the issue and the kwargs
+                LOG.exception('Exception in string format operation')
+                for name, value in kwargs.iteritems():
+                    LOG.error("%s: %s" % (name, value))    # noqa
+
+                message = self.msg_fmt
+
+        super(KeystoneVomsException, self).__init__(message)
+
+    def format_message(self):
+        # NOTE(mrodden): use the first argument to the python Exception object
+        # which should be our full NovaException message, (see __init__)
+        return self.args[0]
+
+
+class Unauthorized(KeystoneVomsException):
+    msg_fmt = "The request you have made requires authentication."
+    code = 401
+    title = 'Unauthorized'
+
+
+class VerifyCertificateError(Unauthorized):
+    msg_fmt = "Cannot verify certificate with DN '%(subject)s': %(reason)s"
+
+
+class CertificateRevoked(Unauthorized):
+    msg_fmt = "Certificate with DN '%(subject)s' is revoked."
+
+
+class CaOpenError(KeystoneVomsException):
+    msg_fmt = "Cannot open CA file %(file)s: %(reason)s"
+
+
+class FileError(KeystoneVomsException):
+    msg_fmt = "Cannot load file %(file)s: %(reason)s"

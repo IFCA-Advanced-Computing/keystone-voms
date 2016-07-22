@@ -24,45 +24,20 @@ Install the Keystone VOMS module
 Install from Repositories
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can install Keystone VOMS from any of the following repositories. If you
-plan to install it like this, remove any prior version installed via pip.  And
-check that you are removing the old versions. If you did not install this
-module using pip, just ignore this step::
+You can install Keystone VOMS from any of the repositories published in the
+AppDB. If you plan to install it like this, remove any prior version installed
+via pip and check that you are removing the old versions. If you did not
+install this module using pip, just ignore this step::
 
     # pip uninstall python-keystone-voms keystone-voms
 
-
-Ubuntu 14.04
-^^^^^^^^^^^^
-
-First of all, install the repository key into the APT list of trusted keys::
-
-    # curl http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/liberty/xUbuntu_14.04/Release.key | apt-key add -
-
-Make sure that you don't have any other cloud integration repo for an old
-release, and add the repository to your ``sources.list.d`` directory::
-
-    # echo "deb http://download.opensuse.org/repositories/home:/aloga:/cloud-integration:/liberty/xUbuntu_14.04/ ./" \
-      | tee /etc/apt/sources.list.d/aloga-cloud-integration-liberty.list
-    # apt-get update
-    # apt-get install python-keystone-voms
-
-CentOS 7
-^^^^^^^^
-
-Add the repository to yum and install::
-
-    # curl -L http://download.opensuse.org/repositories/home:aloga:cloud-integration:liberty/CentOS_7/home:aloga:cloud-integration:liberty.repo > /etc/yum.repos.d/home:aloga:cloud-integration:liberty.repo
-    # yum install python-keystone-voms
-
+Please, do not use the OpenSuse build service anymore and switch to the EGI
+AppDB repositories. Please visit the `Keystone-VOMS product page
+<https://appdb.egi.eu/store/software/keystone.voms>`_ where you can find the
+download page for all the available and supported versions.
 
 Install from pip
 ~~~~~~~~~~~~~~~~
-
-Before the PyPi package was called ``python-keystone-voms``. You should remove
-if before installing it::
-
-    # pip uninstall python-keystone-voms
 
 With a running Keystone you can install the VOMS module with the
 following command (note the version range)::
