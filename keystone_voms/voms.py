@@ -125,7 +125,7 @@ class VOMS(object):
         # other intermediate CAs we will fail
         cert = self.chain[-1]
         # Get cert issuer hash in hex lowercase
-        h = format(int(cert.get_issuer().hash()), "02x")
+        h = format(int(cert.get_issuer().hash()), "08x")
         ca = self._load_ca(h)
         self.chain_store.add_cert(ca)
         try:
@@ -139,11 +139,11 @@ class VOMS(object):
         # should correspond to the CA.
         cert = self.chain[-1]
         # Get cert issuer hash in hex lowercase
-        h = format(int(cert.get_issuer().hash()), "02x")
+        h = format(int(cert.get_issuer().hash()), "08x")
 
         crl = self._load_crl(h)
         # FIXME(aloga): move to helper function
-        cert_serial = format(cert.get_serial_number(), '02x')
+        cert_serial = format(cert.get_serial_number(), '08x')
         # The CRL list may be empty
         crls = crl.get_revoked() or []
         for rvk in crls:
