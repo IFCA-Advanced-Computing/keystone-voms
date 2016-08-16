@@ -102,7 +102,9 @@ class VOMS(object):
             suffix = "r0"
             fn = crypto.load_crl
 
-        ssl_file = os.path.join(self.ca_path, "%s.%s" % (ssl_hash, suffix))
+        # NOTE(aloga): filename is 8 characters long
+        ssl_file = os.path.join(self.ca_path, "%s.%s" %
+                                (ssl_hash.zfill(8), suffix))
         try:
             with open(ssl_file, "r") as f:
                 obj = fn(crypto.FILETYPE_PEM, f.read())
