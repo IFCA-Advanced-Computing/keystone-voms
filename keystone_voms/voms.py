@@ -143,8 +143,9 @@ class VOMS(object):
         try:
             store_ctx.verify_certificate()
         except Exception as e:
-            raise exception.VerifyCertificateError(subject=cert.get_subject(),
-                                                   reason=e)
+            raise exception.VerifyCertificateError(
+                subject=issuer_cert.get_subject(),
+                reason=e)
 
     def _check_crl(self):
         # NOTE(aloga): check CRLs for the last chain component issuer, as this
