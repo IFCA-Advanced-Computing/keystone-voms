@@ -112,8 +112,8 @@ for the http server (``SSLCertificateFile`` and ``SSLCertificateKeyFile``)::
         SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
         SSLOptions              +StdEnvVars +ExportCertData
 
-        WSGIScriptAlias /  /var/www/cgi-bin/keystone/main
-        WSGIProcessGroup keystone
+        WSGIScriptAlias     /  /usr/bin/keystone-wsgi-public
+        WSGIProcessGroup    keystone
     </VirtualHost>
 
     Listen 35357
@@ -134,7 +134,7 @@ for the http server (``SSLCertificateFile`` and ``SSLCertificateKeyFile``)::
         SSLCipherSuite          ALL:!ADH:!EXPORT:!SSLv2:RC4+RSA:+HIGH:+MEDIUM:+LOW
         SSLOptions              +StdEnvVars +ExportCertData
 
-        WSGIScriptAlias     / /var/www/cgi-bin/keystone/admin
+        WSGIScriptAlias     / /usr/bin/keystone-wsgi-admin
         WSGIProcessGroup    keystoneapi
     </VirtualHost>
 
