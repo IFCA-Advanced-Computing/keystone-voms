@@ -52,6 +52,8 @@ class VOMS(object):
             self.chain.append(cert)
             self.chain_store.add_cert(cert)
 
+        self.ssldepth = 10
+
         self.user = None
         self.userca = None
         self.server = None
@@ -121,20 +123,29 @@ class VOMS(object):
     def _load_crl(self, crl_hash):
         return self._load_openssl_file(crl_hash, kind="crl")
 
+    def _get_issuer_cert(self, cert):
+        h = format(int(cert.get_issuer().hash()), "02x")
+        issuer_cert = self._load_ca(h)
+        return issuer_cert
+
     def _verify(self):
         store_ctx = crypto.X509StoreContext(self.chain_store, self.proxy)
-        # NOTE(aloga): Load the CA of the last chain component. If there are
-        # other intermediate CAs we will fail
-        cert = self.chain[-1]
-        # Get cert issuer hash in hex lowercase
-        h = format(int(cert.get_issuer().hash()), "02x")
-        ca = self._load_ca(h)
-        self.chain_store.add_cert(ca)
+        issuer_cert = self.chain[-1]
+        depth = 0
+        while depth < self.ssldepth:
+            if issuer_cert.get_issuer() == issuer_cert.get_subject():
+                # It is the Root certificate
+                break
+            else:
+                issuer_cert = self._get_issuer_cert(issuer_cert)
+                self.chain_store.add_cert(issuer_cert)
+                depth += 1
         try:
             store_ctx.verify_certificate()
         except Exception as e:
-            raise exception.VerifyCertificateError(subject=cert.get_subject(),
-                                                   reason=e)
+            raise exception.VerifyCertificateError(
+                subject=issuer_cert.get_subject(),
+                reason=e)
 
     def _check_crl(self):
         # NOTE(aloga): check CRLs for the last chain component issuer, as this
