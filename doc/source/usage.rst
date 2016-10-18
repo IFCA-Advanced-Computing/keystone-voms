@@ -19,11 +19,16 @@ VOMS authentication client plugin
 =================================
 
 In order to facilitate the usage of the VOMS authentication with an
-OpenStack installation an `authentication plugin for the nova client
-<https://github.com/IFCA/voms-auth-system-openstack>`_ has been created. Please
-follow its `instructions
-<https://github.com/IFCA/voms-auth-system-openstack/>`_
-in order to use it.
+OpenStack installation there is an `authentication plugin for the
+keystoneauth library <https://github.com/enolfc/openstack-voms-auth-type>`_
+has been created. This plugin can be used with the `python-openstackclient
+<http://docs.openstack.org/developer/python-openstackclient/>`_. Follow
+the `instructions <https://github.com/enolfc/openstack-voms-auth-type>`_ to
+use it.
+
+A `(deprecated) plugin for the Nova client
+<https://github.com/IFCA/voms-auth-system-openstack/>`_ is also available for
+older installations.
 
 Manual Usage
 ============
