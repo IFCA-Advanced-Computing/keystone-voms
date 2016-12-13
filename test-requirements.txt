@@ -15,3 +15,10 @@ sphinx>=1.1.2
 mock>=1.2
 
 WebOb>=1.2.3
+
+# Required by Keystone upstream tests
+pyldap
+ldappool
+
+# test wsgi apps without starting an http server
+WebTest>=2.0 # MIT
