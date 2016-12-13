@@ -15,3 +15,9 @@ sphinx>=1.1.2
 mock>=1.2
 
 WebOb>=1.2.3
+
+# Required by Keystone upstream tests
+# avoid DeprecationWarning: the method passlib.handlers.sha2_crypt.sha512_crypt.encrypt() is deprecated as of Passlib 1.7, and will be removed in Passlib 2.0, use .hash() instead.
+passlib<=1.6.0
+# test wsgi apps without starting an http server
+WebTest>=2.0 # MIT
