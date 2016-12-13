@@ -16,14 +16,14 @@ import os.path
 
 from keystone.assignment import controllers
 from keystone.common import authorization
-from keystone import config
+from keystone import conf as config
 from keystone import middleware
 from keystone.models import token_model
 from keystone.tests.unit import default_fixtures
 from keystone.tests.unit import test_auth
-from keystone.tests.unit import test_middleware
 import mock
 from OpenSSL import crypto
+import webob
 
 from keystone_voms import core
 from keystone_voms.tests import fakes
@@ -40,8 +40,21 @@ def get_auth_body(tenant=None):
     return d
 
 
+def make_request(**kwargs):
+    accept = kwargs.pop('accept', None)
+    method = kwargs.pop('method', 'GET')
+    body = kwargs.pop('body', None)
+    req = webob.Request.blank('/', **kwargs)
+    req.method = method
+    if body is not None:
+        req.body = body
+    if accept is not None:
+        req.accept = accept
+    return req
+
+
 def prepare_request(body=None, cert=None, chain=None):
-    req = test_middleware.make_request()
+    req = make_request()
     if body:
         req.environ[middleware.PARAMS_ENV] = body
     if cert:
@@ -120,8 +133,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux = core.VomsAuthNMiddleware(None)
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        context = {"environment": req.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req,
                                                     params["auth"])
         self.assertEqual(fakes.user_dn,
                          remote_token["access"]["user"]["username"])
@@ -148,8 +160,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        context = {"environment": req.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req,
                                                     params["auth"])
 
         tenant_controller = controllers.TenantAssignment()
@@ -164,7 +175,9 @@ class VomsTokenService(test_auth.AuthTest):
             "query_string": {"limit": None},
         }
 
-        tenants = tenant_controller.get_projects_for_token(fake_context)
+        req.context_dict = fake_context
+
+        tenants = tenant_controller.get_projects_for_token(req)
         self.assertItemsEqual(
             (self.tenant_id, tenant_id),  # User tenants
             [i["id"].lower() for i in tenants["tenants"]]
@@ -179,8 +192,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        context = {"environment": req.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req,
                                                     params["auth"])
         self.assertEqual(fakes.user_dn,
                          remote_token["access"]["user"]["username"])
@@ -198,8 +210,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        context = {"environment": req.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertIn("role1", roles)
@@ -222,8 +233,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        context = {"environment": req.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertIn("role1", roles)
@@ -254,8 +264,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        context = {"environment": req.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertIn("role1", roles)
@@ -272,8 +281,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req)
         params = req.environ[middleware.PARAMS_ENV]
-        context = {"environment": req.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req,
                                                     params["auth"])
         roles = [r['name'] for r in remote_token['access']['user']['roles']]
         self.assertNotIn("role1", roles)
@@ -291,8 +299,7 @@ class VomsTokenService(test_auth.AuthTest):
         aux._no_verify = True
         aux._process_request(req_dteam)
         params = req_dteam.environ[middleware.PARAMS_ENV]
-        context = {"environment": req_dteam.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req_dteam,
                                                     params["auth"])
         tenant_controller = controllers.TenantAssignment()
         token_id = remote_token["access"]["token"]["id"]
@@ -304,7 +311,8 @@ class VomsTokenService(test_auth.AuthTest):
             "token_id": token_id,
             "query_string": {"limit": None},
         }
-        tenants = tenant_controller.get_projects_for_token(fake_context)
+        req_dteam.context_dict = fake_context
+        tenants = tenant_controller.get_projects_for_token(req_dteam)
         dteam_tenants = aux._filter_tenants(tenants["tenants"])
         self.assertEqual(self.tenant_name, dteam_tenants[0]["name"])
 
@@ -314,8 +322,7 @@ class VomsTokenService(test_auth.AuthTest):
                                   fakes.user_cert)
         aux._process_request(req_ops)
         params = req_dteam.environ[middleware.PARAMS_ENV]
-        context = {"environment": req_dteam.environ}
-        remote_token = self.controller.authenticate(context,
+        remote_token = self.controller.authenticate(req_ops,
                                                     params["auth"])
         tenant_controller = controllers.TenantAssignment()
         token_id = remote_token["access"]["token"]["id"]
@@ -327,7 +334,8 @@ class VomsTokenService(test_auth.AuthTest):
             "token_id": token_id,
             "query_string": {"limit": None},
         }
-        tenants = tenant_controller.get_projects_for_token(fake_context)
+        req_ops.context_dict = fake_context
+        tenants = tenant_controller.get_projects_for_token(req_ops)
         # user should be now in two tenants
         self.assertEqual(2, len(tenants["tenants"]))
         ops_tenants = aux._filter_tenants(tenants["tenants"])
