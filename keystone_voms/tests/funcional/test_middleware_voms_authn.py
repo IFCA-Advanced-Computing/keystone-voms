@@ -16,14 +16,14 @@ import os.path
 
 from keystone.assignment import controllers
 from keystone.common import authorization
-from keystone import config
+from keystone.common import config
 from keystone import middleware
 from keystone.models import token_model
 from keystone.tests.unit import default_fixtures
 from keystone.tests.unit import test_auth
-from keystone.tests.unit import test_middleware
 import mock
 from OpenSSL import crypto
+import webob
 
 from keystone_voms import core
 from keystone_voms.tests import fakes
@@ -40,8 +40,21 @@ def get_auth_body(tenant=None):
     return d
 
 
+def make_request(**kwargs):
+    accept = kwargs.pop('accept', None)
+    method = kwargs.pop('method', 'GET')
+    body = kwargs.pop('body', None)
+    req = webob.Request.blank('/', **kwargs)
+    req.method = method
+    if body is not None:
+        req.body = body
+    if accept is not None:
+        req.accept = accept
+    return req
+
+
 def prepare_request(body=None, cert=None, chain=None):
-    req = test_middleware.make_request()
+    req = make_request()
     if body:
         req.environ[middleware.PARAMS_ENV] = body
     if cert:
