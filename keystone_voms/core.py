@@ -13,6 +13,7 @@
 # under the License.
 
 import copy
+import re
 import uuid
 
 from keystone.common import dependency
@@ -23,6 +24,7 @@ import keystone.middleware
 from oslo_config import cfg
 from oslo_log import log
 from oslo_serialization import jsonutils
+from six.moves import urllib
 
 from keystone_voms import voms
 
@@ -55,6 +57,11 @@ opts = [
     cfg.ListOpt("user_roles",
                 default=["_member_"],
                 help="List of roles to add to new users."),
+    cfg.BoolOpt("enable_pusp",
+                default=False,
+                help="If enabled, PUSP users from robot certificates "
+                     "will be handled as independent users (Requires "
+                     "gridproxy module)."),
 ]
 CONF.register_opts(opts, group="voms")
 
@@ -64,6 +71,9 @@ CONTEXT_ENV = keystone.middleware.CONTEXT_ENV
 SSL_CLIENT_S_DN_ENV = "SSL_CLIENT_S_DN"
 SSL_CLIENT_CERT_ENV = "SSL_CLIENT_CERT"
 SSL_CLIENT_CERT_CHAIN_ENV_PREFIX = "SSL_CLIENT_CERT_CHAIN_"
+
+ROBOT_PROXY_REGEXP = r'^(\/.+)/CN=[Rr]obot[^\w\\]+([^\/]+)$'
+PUSP_REGEXP = r'^(\/.+)/CN=[Rr]obot[^\w\\]+([^\/]+)/CN=eToken:([^\/]+)$'
 
 
 @dependency.requires('identity_api', 'assignment_api', 'resource_api',
@@ -201,8 +211,13 @@ class VomsAuthNMiddleware(wsgi.Middleware):
                                                              tenant_id,
                                                              role['id'])
 
-    def _get_user(self, voms_obj, req_tenant):
+    def _get_user(self, request, voms_obj, req_tenant):
         user_dn = voms_obj.user
+        if CONF.voms.enable_pusp and re.match(ROBOT_PROXY_REGEXP, user_dn):
+            robot_dn = urllib.parse.unquote(
+                request.environ.get("GRST_CRED_AURI_1", "")[3:])
+            if re.match(PUSP_REGEXP, robot_dn):
+                user_dn = robot_dn
         try:
             user_ref = self.identity_api.get_user_by_name(user_dn,
                                                           self.domain)
@@ -252,7 +267,7 @@ class VomsAuthNMiddleware(wsgi.Middleware):
         params = request.environ.get(PARAMS_ENV)
         req_tenant = params["auth"].get("tenantName", None)
 
-        user_dn, tenant = self._get_user(voms_obj, req_tenant)
+        user_dn, tenant = self._get_user(request, voms_obj, req_tenant)
 
         request.environ['REMOTE_USER'] = user_dn
 

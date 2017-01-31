@@ -164,6 +164,21 @@ With the above configuration, and assuming that the Keystone host is
 * ``https://keystone.example.org:35357/`` will be administration endpoint,
   thus the Keystone URL will be ``https://keystone.example.org:35357/v2.0``
 
+GridSite and Per-User-Sub-Proxy support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Support for Per-User-Sub-Proxy so robot certificates with extra user
+information is mapped to individual users requires the `GridSite module
+<https://github.com/cesnet/gridsite>`_ v2.3.3 or later for Apache installed
+and enabled.
+
+Gridsite packages are available through `EGI's UMD repository
+<http://repository.egi.eu/>`_ for most distributions. Once installed, enable it
+in your Apache configuration with a line similar to this (be sure to check your
+distribution gridsite package for details)::
+
+    LoadModule gridsite_module /usr/lib/apache2/modules/mod_gridsite.so
+
 
 Catalog
 ~~~~~~~

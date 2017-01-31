@@ -423,3 +423,42 @@ class MiddlewareVomsAuthn(tests.TestCase):
         resp = aux.process_response(None, resp)
         resp = jsonutils.loads(resp.body)
         self.assertDictEqual(project, resp["tenants"][0])
+
+    @mock.patch("keystone_voms.core.VomsAuthNMiddleware."
+                "_get_project_from_voms")
+    @mock.patch("keystone_voms.core.VomsAuthNMiddleware.identity_api",
+                create=True)
+    @mock.patch("__builtin__.open", mock.mock_open(read_data="{}"))
+    def test_get_user_pusp(self, m_idapi, m_getproject):
+        req = prepare_request()
+        pusp_dn = "/C=ES/O=Foo/CN=Robot: fake/CN=eToken: bar"
+        v = FakeVOMS({"voname": "foo", "fqans": "bar",
+                      "user": "/C=ES/O=Foo/CN=Robot: fake"})
+
+        m_idapi.get_user_by_name.return_value = {"id": uuid.uuid4().hex}
+        m_getproject.return_value = {"name": "BAR"}
+
+        aux = core.VomsAuthNMiddleware(None)
+        # pusp disabled
+        user, tenant = aux._get_user(req, v, None)
+        self.assertEqual(v.user, user)
+        self.assertEqual("BAR", tenant)
+
+        # pusp enabled, but no GRIDSITE var
+        self.config_fixture.config(group="voms", enable_pusp=True)
+        user, tenant = aux._get_user(req, v, None)
+        self.assertEqual(v.user, user)
+        self.assertEqual("BAR", tenant)
+
+        # pusp enabled, with GRIDSITE var
+        req.environ["GRST_CRED_AURI_1"] = ":".join(["dn", pusp_dn])
+        user, tenant = aux._get_user(req, v, None)
+        self.assertEqual(pusp_dn, user)
+        self.assertEqual("BAR", tenant)
+
+        # pusp enabled, with GRIDSITE var, no robot DN
+        v = FakeVOMS(fakes.user_data["dteam"])
+        req.environ["GRST_CRED_AURI_1"] = ":".join(["dn", pusp_dn])
+        user, tenant = aux._get_user(req, v, None)
+        self.assertEqual(v.user, user)
+        self.assertEqual("BAR", tenant)
