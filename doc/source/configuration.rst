@@ -32,6 +32,7 @@ under the ``[voms]`` section::
     autocreate_users = False
     add_roles = False
     user_roles = _member_
+    enable_pusp = False
 
 * ``vomsdir_path``: Path storing the ``.lsc`` files.
 * ``ca_path``: Path where the CAs and CRLs are stored.
@@ -40,6 +41,8 @@ under the ``[voms]`` section::
 * ``autocreate_users``: Whether a user should be autocreated if it does not exist.
 * ``add_roles``: Whether roles should be added to users or not.
 * ``user_roles``: list of role names to add to the users (if ``add_roles`` is ``True``).
+* ``enable_pusp``: if enabled, when a user with a PUSP is detected, it will be
+  handled as independent user.
 
 Allowed VOs
 -----------

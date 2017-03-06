@@ -12,7 +12,7 @@ virtualenv:
     system_site_packages: true
 
 install:
-    - pip install tox
+    - pip install --upgrade tox
     - pip install -r requirements.txt
     - pip install -r test-requirements.txt
     - pip install -e git+https://github.com/openstack/keystone@stable/mitaka#egg=keystone
